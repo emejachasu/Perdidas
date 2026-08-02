@@ -16,7 +16,7 @@ from loguru import logger
 
 from ..config import Config, load_config
 from ..lakehouse import Lakehouse, feeder_input_hash
-from .balance import analyze_feeder
+from .analyze import analyze_feeder_full
 
 # Fases del pipeline reportadas como avance (§20). Las de fase >F5 se declaran
 # como pendientes (planned) para que el tablero muestre el roadmap real.
@@ -30,12 +30,13 @@ PIPELINE_STAGES = [
     "ml_risk",           # F7 (proxy en F0)
     "prioritization",    # F8 (planned)
 ]
-STAGES_DONE_F0 = {"ingest", "electrical", "balance", "ml_risk"}
+PLANNED_STAGES = {"state_estimation", "prioritization"}
 
 
 def _bronze_entities(lake: Lakehouse, fid: str) -> dict[str, pd.DataFrame]:
     entities = ["poles", "sites", "transformer_units", "customers",
-                "streetlights", "consumption", "header_meters"]
+                "streetlights", "consumption", "header_meters",
+                "segments", "switching_devices", "theft_labels"]
     return {e: lake.read_entity("bronze", e, fid) for e in entities}
 
 
@@ -60,7 +61,7 @@ def _process_one(root: str, fid: str, force: bool) -> dict:
         return {"feeder_id": fid, "status": "skipped", "input_hash": ihash}
 
     t0 = time.perf_counter()
-    gold = analyze_feeder(tables, cfg)
+    gold, stages_done = analyze_feeder_full(tables, cfg)
     for entity, df in gold.items():
         lake.write_partition("gold", entity, fid, df)
 
@@ -69,9 +70,9 @@ def _process_one(root: str, fid: str, force: bool) -> dict:
         "feeder_id": fid,
         "input_hash": ihash,
         "stages_total": len(PIPELINE_STAGES),
-        "stages_done": len(STAGES_DONE_F0),
-        "progress_pct": round(100.0 * len(STAGES_DONE_F0) / len(PIPELINE_STAGES), 1),
-        "stages_done_list": ",".join(sorted(STAGES_DONE_F0)),
+        "stages_done": len(stages_done),
+        "progress_pct": round(100.0 * len(stages_done) / len(PIPELINE_STAGES), 1),
+        "stages_done_list": ",".join(sorted(stages_done)),
         "balance_closed": bool(abs(bal["residual_pct"]) < 0.5 and not bal["pnt_negative_alert"]),
         "pnt_pct": float(bal["pnt_pct"]),
         "technical_pct": float(bal["technical_pct"]),
@@ -106,9 +107,28 @@ def run(root: str, feeders: list[str] | None = None, force: bool = False,
             for f in futs:
                 results.append(f.result())
 
+    # --- §7.4: detección de transferencias entre alimentadores (nivel sistema) ---
+    try:
+        _detect_transfers(lake)
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"Detección de transferencias falló: {e}")
+
     processed = sum(1 for r in results if r["status"] == "processed")
     skipped = sum(1 for r in results if r["status"] == "skipped")
     elapsed = time.perf_counter() - t0
     logger.info(f"Pipeline: {processed} procesados, {skipped} reutilizados en {elapsed:.2f}s")
     return {"processed": processed, "skipped": skipped, "feeders": len(feeders),
             "elapsed_s": round(elapsed, 3)}
+
+
+def _detect_transfers(lake: Lakehouse) -> None:
+    from ..topology import infer_transfers
+    header = lake.read_entity("bronze", "header_meters")
+    if header.empty:
+        return
+    wide = header.pivot_table(index="year_month", columns="feeder_id",
+                              values="kwh", aggfunc="sum").sort_index()
+    transfers = infer_transfers(wide)
+    path = lake.root / "gold" / "feeder_transfers"
+    path.mkdir(parents=True, exist_ok=True)
+    transfers.to_parquet(path / "data.parquet", index=False)

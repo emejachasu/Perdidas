@@ -23,3 +23,8 @@ label_mining:
   drop_recovery_pct: 0.40
   drop_recovery_months: 3
   jump_after_intervention_pct: 0.30
+  zero_active_months: 4
+
+# Explicabilidad (SHAP): nº de casos de la cabeza del ranking a explicar (§17.2)
+explain:
+  top_n: 1000

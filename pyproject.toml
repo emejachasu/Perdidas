@@ -20,17 +20,20 @@ dependencies = [
     "typer>=0.9",
     "pyyaml>=6.0",
     "loguru>=0.7",
+    "rustworkx>=0.13",       # F2 topología (obligatorio por desempeño)
+    "networkx>=3.0",         # interfaz de conveniencia
+    "scikit-learn>=1.3",     # F7 base ML e isotónica
+    "ruptures>=1.1",         # F7 change points (M5)
 ]
 
 [project.optional-dependencies]
 dashboard = ["streamlit>=1.30", "plotly>=5.18"]
 dev = ["pytest>=7.4", "hypothesis>=6.90", "pytest-cov>=4.1"]
-# Módulos completos de fases posteriores (no requeridos para F0):
+# Aceleradores opcionales (el código degrada con elegancia si faltan):
+power = ["OpenDSSDirect.py", "pandapower"]      # F4 validación cruzada
+ml = ["lightgbm", "xgboost", "pyod", "shap", "imbalanced-learn"]  # F7 mejores modelos + SHAP
 geo = ["geopandas", "shapely", "pyogrio", "pyproj"]
-topology = ["rustworkx", "networkx"]
-power = ["OpenDSSDirect.py", "pandapower"]
-ml = ["scikit-learn", "lightgbm", "xgboost", "pyod", "ruptures", "shap", "imbalanced-learn"]
-opt = ["ortools"]
+opt = ["ortools"]               # F8 optimización de campaña
 
 [project.scripts]
 lossan = "lossan.cli:app"

@@ -122,6 +122,39 @@ class HeaderMeter(BaseModel):
     kvarh: float | None = None
 
 
+class SwitchingDevice(Base):
+    """Dispositivo de maniobra (§7.1)."""
+
+    device_id: str
+    site_id: str | None = None
+    node_id: str
+    type: str                         # seccionador, reconectador, interruptor, fusible...
+    normal_state: str                 # NA / NC
+    current_state: str | None = None
+    remote: bool = False
+
+
+class SwitchingEvent(BaseModel):
+    """Evento de conmutación desde SCADA/DMS/ADMS (§7.2)."""
+
+    device_id: str
+    timestamp: str
+    estado_previo: str
+    estado_nuevo: str
+    motivo: str | None = None         # maniobra / falla / transferencia
+    operador: str | None = None
+
+
+class ProtectionZone(BaseModel):
+    """Zona de protección — definición operativa de ramal (§7.5)."""
+
+    feeder_id: str
+    zone_id: str
+    parent_zone: str | None = None
+    n_customers: int = 0
+    n_tx_sites: int = 0
+
+
 class FieldInspection(BaseModel):
     """§23.1 — captura de resultados de campo. Definido desde F0 aunque vacío.
 
@@ -151,5 +184,8 @@ CANONICAL_MODELS = {
     "segments": Segment,
     "streetlights": Streetlight,
     "header_meters": HeaderMeter,
+    "switching_devices": SwitchingDevice,
+    "switching_events": SwitchingEvent,
+    "protection_zones": ProtectionZone,
     "field_inspections": FieldInspection,
 }

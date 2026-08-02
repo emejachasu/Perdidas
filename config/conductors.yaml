@@ -1,0 +1,18 @@
+# Catálogo de conductores (impedancias por secuencia y ampacidad).
+# R, X en ohm/km a temperatura de referencia; ampacidad en A.
+conductors:
+  # Primarios (media tensión)
+  ACSR_1/0:   { material: al, r_ohm_km: 0.556, x_ohm_km: 0.400, ampacity_a: 230, section: primary }
+  ACSR_2/0:   { material: al, r_ohm_km: 0.441, x_ohm_km: 0.390, ampacity_a: 270, section: primary }
+  ACSR_4/0:   { material: al, r_ohm_km: 0.276, x_ohm_km: 0.375, ampacity_a: 340, section: primary }
+  ACSR_266:   { material: al, r_ohm_km: 0.216, x_ohm_km: 0.365, ampacity_a: 460, section: primary }
+  # Secundarios (baja tensión)
+  CU_6:       { material: cu, r_ohm_km: 1.320, x_ohm_km: 0.100, ampacity_a: 80,  section: secondary }
+  CU_4:       { material: cu, r_ohm_km: 0.830, x_ohm_km: 0.095, ampacity_a: 105, section: secondary }
+  AL_2:       { material: al, r_ohm_km: 0.856, x_ohm_km: 0.090, ampacity_a: 120, section: secondary }
+  TRIPLEX_2:  { material: al, r_ohm_km: 0.868, x_ohm_km: 0.088, ampacity_a: 115, section: secondary }
+
+# Orden de calibre creciente (para R03: no monotonicidad de sección)
+ordering:
+  primary: [ACSR_1/0, ACSR_2/0, ACSR_4/0, ACSR_266]
+  secondary: [CU_6, CU_4, AL_2, TRIPLEX_2]

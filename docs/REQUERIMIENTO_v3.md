@@ -18,17 +18,17 @@ presupuestal (4 M USD), usando ML robusto a etiquetas incompletas (PU learning).
 | §2 | Lakehouse Bronze/Silver/Gold + DuckDB + hash incremental | F0 ✅ | `lakehouse/storage.py`, `pipeline/runner.py` |
 | §4-§5 | Modelo canónico + jerarquía Poste→Puesto→Unidad | ✅ | `domain/models.py`, `domain/bank.py` |
 | §5.2 | Agregación de capacidad y pérdidas de banco | ✅ | `domain/bank.py` |
-| §6 | Topología y trazas (`rustworkx`) | 🔜 F2 | — |
-| §7 | Topología dinámica, zonas de protección, ENS | 🔜 F2/F5 | — |
-| §8 | Calidad de datos R01–R25 + auto-consistencia ML | 🔜 F2 | (P01–P12 parcial en `bank.py`) |
+| §6 | Topología y trazas (`rustworkx`) | ✅ F2 | `topology/graph.py` |
+| §7 | Topología dinámica, zonas de protección, transferencias | ✅ F2 (ENS 🔜 F5) | `topology/zones.py`, `topology/dynamic.py` |
+| §8 | Calidad de datos R01–R25 (motor por YAML) | ✅ F2 | `topology/quality.py`, `config/rules.yaml` |
 | §9 | P/Q/S/I y pérdidas (todas las fórmulas) | ✅ | `electrical/formulas.py` |
-| §10 | Alumbrado público | Agregado ✅ | `pipeline/balance.py` |
-| §11 | Flujo de potencia propio + OpenDSS + IEEE | 🔜 F4 | — |
-| §12 | Pérdidas técnicas | F0 ✅ | `pipeline/technical.py` |
-| §13 | Balance jerárquico y PNT | F0 ✅ | `pipeline/balance.py` |
+| §10 | Alumbrado público | ✅ | `pipeline/balance.py` |
+| §11 | Flujo de potencia propio + OpenDSS + validación cruzada | ✅ F4 | `powerflow/` |
+| §12 | Pérdidas técnicas | ✅ | `pipeline/technical.py` |
+| §13 | Balance jerárquico y PNT | ✅ | `pipeline/balance.py` |
 | §14 | Cargabilidad + desbalance + ramales | Cargabilidad ✅ / resto 🔜 F6 | `pipeline/balance.py` |
-| §15 | PU learning + minería de etiquetas + SHAP | 🔜 F7 (proxy M1 ✅) | `pipeline/balance.py::_customer_risk` |
-| §16 | Agregación multinivel del riesgo | 🔜 F7 | — |
+| §15 | PU learning + minería de etiquetas + SHAP + Precision@k | ✅ F7 | `ml/` |
+| §16 | Agregación multinivel del riesgo | Parcial (score+zona) 🔜 F8 | `ml/risk.py` |
 | §17 | Priorización 4 M USD + OR-Tools + ruteo | 🔜 F8 | `config/budget.yaml` |
 | §18 | Salidas, dashboard, KPIs | Dashboard ✅ | `dashboard/app.py` |
 | §19 | Validación y pruebas | Parcial ✅ | `tests/` |

@@ -13,6 +13,7 @@ escrito como constante de negocio en el código.
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -78,6 +79,7 @@ class SyntheticGenerator:
         streetlights = self._streetlights(rng, fid, n_tx, sites, poles)
         consumption, labels = self._consumption(rng, fid, customers)
         header = self._header(fid, sites, units, customers, consumption, streetlights)
+        segments, devices, anomalies = self._network(rng, fid, sites, customers, poles)
 
         return {
             "poles": poles,
@@ -88,7 +90,112 @@ class SyntheticGenerator:
             "consumption": consumption,
             "header_meters": header,
             "theft_labels": labels,
+            "segments": segments,
+            "switching_devices": devices,
+            "anomaly_labels": anomalies,
         }
+
+    def _network(self, rng, fid, sites, customers, poles):
+        """Red radial: tramos primarios (árbol), transformador (arista implícita
+        vía units), tramos secundarios y dispositivos de maniobra. Inyecta
+        anomalías con verdad-terreno para validar las reglas R01-R25 (§8)."""
+        cond = self.cfg.conductors
+        prim_order = self.cfg.conductor_ordering["primary"]
+        sec_order = self.cfg.conductor_ordering["secondary"]
+        v_mv = float(self.cfg.electrical["voltage"]["ll_mv"])
+        v_lv = float(self.cfg.electrical["voltage"]["ll_lv"])
+        pole_xy = poles.set_index("pole_id")[["x", "y"]]
+        src = f"{fid}-SRC"
+
+        # nodos primarios de cada puesto
+        nodes = []
+        for _, s in sites.iterrows():
+            xy = pole_xy.loc[s["pole_id"]]
+            nodes.append((s["node_id"], s["site_id"], float(xy["x"]), float(xy["y"])))
+        nodes.sort(key=lambda t: t[2] ** 2 + t[3] ** 2)
+
+        placed = [(src, 0.0, 0.0, 0)]   # (node, x, y, depth)
+        parent_conductor: dict[str, str] = {}
+        seg_rows, seg_i = [], 0
+        for node_id, site_id, x, y in nodes:
+            best = min(placed, key=lambda p: (p[1] - x) ** 2 + (p[2] - y) ** 2)
+            length_km = max(0.01, math.hypot(best[1] - x, best[2] - y) / 1000.0)
+            depth = best[3] + 1
+            idx = max(0, len(prim_order) - 1 - depth // 3)
+            code = prim_order[idx]
+            c = cond[code]
+            seg_rows.append(self._seg_row(fid, f"{fid}-S{seg_i:05d}", best[0], node_id,
+                                          length_km, code, c, "ABC", v_mv, "overhead", depth))
+            parent_conductor[node_id] = code
+            placed.append((node_id, x, y, depth))
+            seg_i += 1
+
+        # tramos secundarios: cliente -> nodo secundario del puesto
+        site_node = sites.set_index("site_id")["node_id"].to_dict()
+        for _, cu in customers.iterrows():
+            tx = cu["transformer_site_id"]
+            snode = f"{site_node.get(tx, src)}_S"
+            code = sec_order[int(rng.integers(0, len(sec_order)))]
+            c = cond[code]
+            length_km = max(0.005, float(rng.uniform(0.01, 0.08)))
+            phase = cu.get("phase") or rng.choice(["A", "B", "C"])
+            seg_rows.append(self._seg_row(fid, f"{fid}-SS{seg_i:05d}", snode,
+                                          cu["customer_unit_id"], length_km, code, c,
+                                          str(phase), v_lv, "overhead", 99))
+            seg_i += 1
+
+        segments = pd.DataFrame(seg_rows)
+
+        # dispositivos de maniobra en una fracción de tramos primarios
+        prim = segments[segments["voltage_ll"] == v_mv]
+        n_dev = max(1, len(prim) // 12)
+        dev_idx = rng.choice(prim.index.to_numpy(), size=min(n_dev, len(prim)), replace=False)
+        dev_rows = []
+        types = ["seccionador", "reconectador", "interruptor", "fusible", "seccionador_enlace"]
+        for j, si in enumerate(dev_idx):
+            row = segments.loc[si]
+            dev_rows.append({
+                "device_id": f"{fid}-DV{j:03d}", "feeder_id": fid,
+                "site_id": None, "node_id": row["node_to"],
+                "type": str(rng.choice(types)),
+                "normal_state": "NC" if rng.random() > 0.15 else "NA",
+                "current_state": "NC", "remote": bool(rng.random() > 0.5),
+            })
+        devices = pd.DataFrame(dev_rows)
+
+        segments, anomalies = self._inject_anomalies(rng, fid, segments, prim_order)
+        return segments, devices, anomalies
+
+    @staticmethod
+    def _seg_row(fid, sid, nfrom, nto, length_km, code, c, phase, v_ll, constr, depth):
+        return {
+            "segment_id": sid, "feeder_id": fid, "feeder_id_declared": fid,
+            "node_from": nfrom, "node_to": nto, "length_m": round(length_km * 1000, 2),
+            "conductor_code": code, "r_ohm_per_km": c["r_ohm_km"],
+            "x_ohm_per_km": c["x_ohm_km"], "ampacity_a": c["ampacity_a"],
+            "phase": phase, "voltage_ll": v_ll, "construction": constr,
+            "material": c["material"], "section": c["section"], "depth": depth,
+        }
+
+    def _inject_anomalies(self, rng, fid, segments, prim_order):
+        """Inyecta anomalías conocidas: R01 sándwich, R08 feeder_id, R06 fases."""
+        segs = segments.copy()
+        labels = []
+        prim = segs[segs["section"] == "primary"]
+        if len(prim) >= 5:
+            # R01: conductor sándwich (tramo distinto entre dos iguales)
+            for _ in range(max(1, len(prim) // 40)):
+                si = int(rng.choice(prim.index.to_numpy()))
+                other = [c for c in prim_order if c != segs.at[si, "conductor_code"]]
+                segs.at[si, "conductor_code"] = other[0]
+                labels.append({"feeder_id": fid, "segment_id": segs.at[si, "segment_id"],
+                               "injected_rule": "R01"})
+            # R08: feeder_id inconsistente
+            si = int(rng.choice(prim.index.to_numpy()))
+            segs.at[si, "feeder_id_declared"] = "F9999"
+            labels.append({"feeder_id": fid, "segment_id": segs.at[si, "segment_id"],
+                           "injected_rule": "R08"})
+        return segs, pd.DataFrame(labels)
 
     def _poles(self, rng, fid, n) -> pd.DataFrame:
         return pd.DataFrame({
@@ -279,7 +386,7 @@ def generate_universe(root: str, cfg: Config | None = None) -> dict[str, int]:
     gen = SyntheticGenerator(cfg)
     lake = Lakehouse(root)
     counts = {"feeders": 0, "poles": 0, "sites": 0, "transformer_units": 0,
-              "customers": 0, "streetlights": 0, "consumption": 0}
+              "customers": 0, "streetlights": 0, "consumption": 0, "segments": 0}
     for i in range(gen.n_feeders):
         fid = f"F{i:04d}"
         tables = gen.feeder_tables(i)
@@ -292,4 +399,5 @@ def generate_universe(root: str, cfg: Config | None = None) -> dict[str, int]:
         counts["customers"] += len(tables["customers"])
         counts["streetlights"] += len(tables["streetlights"])
         counts["consumption"] += len(tables["consumption"])
+        counts["segments"] += len(tables["segments"])
     return counts

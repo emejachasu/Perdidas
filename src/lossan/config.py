@@ -43,6 +43,8 @@ class Config:
         self._electrical = _load_file("electrical.yaml")
         self._thresholds = _load_file("thresholds.yaml")
         self._streetlight = _load_file("streetlight.yaml")
+        self._conductors = _load_file("conductors.yaml")
+        self._rules = _load_file("rules.yaml")
 
     # --- bloques crudos ---
     @property
@@ -68,6 +70,18 @@ class Config:
     @property
     def streetlight(self) -> dict[str, Any]:
         return self._streetlight["streetlight"]
+
+    @property
+    def conductors(self) -> dict[str, Any]:
+        return self._conductors["conductors"]
+
+    @property
+    def conductor_ordering(self) -> dict[str, list[str]]:
+        return self._conductors["ordering"]
+
+    @property
+    def rules(self) -> dict[str, Any]:
+        return self._rules["rules"]
 
     # --- perfil activo (escala de una corrida) ---
     @property

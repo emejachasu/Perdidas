@@ -1,0 +1,18 @@
+# Reglas determinísticas de calidad de datos (§8.1). Cada una activable y
+# parametrizable. Emiten rule_id, element_id, severity, evidence, confidence.
+rules:
+  R01: { enabled: true,  severity: alta,     desc: "Conductor sándwich" }
+  R02: { enabled: true,  severity: alta,     desc: "Cambio de conductor en tramo muy corto", min_length_m: 15 }
+  R03: { enabled: true,  severity: media,    desc: "No monotonicidad de calibre" }
+  R04: { enabled: true,  severity: media,    desc: "Cambio de material Al<->Cu sin transición" }
+  R06: { enabled: true,  severity: alta,     desc: "Discontinuidad de fases" }
+  R07: { enabled: true,  severity: critica,  desc: "Discontinuidad de tensión sin transformador" }
+  R08: { enabled: true,  severity: critica,  desc: "feeder_id inconsistente con la traza" }
+  R09: { enabled: true,  severity: alta,     desc: "Ampacidad insuficiente" }
+  R10: { enabled: true,  severity: critica,  desc: "Conductor de secundario en tramo primario o viceversa" }
+  R13: { enabled: true,  severity: critica,  desc: "Transformador con nodo aguas arriba no primario" }
+  R15: { enabled: true,  severity: alta,     desc: "Cliente en puesto distinto al de la traza" }
+  R20: { enabled: true,  severity: critica,  desc: "Dispositivo de maniobra sin estado normal" }
+  R22: { enabled: true,  severity: critica,  desc: "Transformador o cliente no alcanzable" }
+  R23: { enabled: true,  severity: alta,     desc: "Zona de protección sin dispositivo aguas arriba" }
+  R25: { enabled: true,  severity: media,    desc: "Luminaria sin puesto de transformación asignable" }

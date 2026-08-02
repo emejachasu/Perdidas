@@ -50,6 +50,11 @@ def load_gold(root: str) -> dict[str, pd.DataFrame]:
         "balance": lake.read_entity("gold", "feeder_balance"),
         "loadability": lake.read_entity("gold", "transformer_loadability"),
         "risk": lake.read_entity("gold", "customer_risk"),
+        "quality": lake.read_entity("gold", "data_quality_findings"),
+        "zones": lake.read_entity("gold", "protection_zones"),
+        "topology": lake.read_entity("gold", "feeder_topology"),
+        "powerflow": lake.read_entity("gold", "powerflow_results"),
+        "transfers": lake.read_entity("gold", "feeder_transfers"),
     }
 
 
@@ -57,11 +62,17 @@ def _metric_card(col, label, value, help_text=""):
     col.metric(label, value, help=help_text)
 
 
+def _filt(df, fid):
+    if df is None or df.empty or "feeder_id" not in df.columns:
+        return df if df is not None else pd.DataFrame()
+    return df[df["feeder_id"] == fid]
+
+
 def main() -> None:
     st.markdown(
         "<h1 style='margin-bottom:0'>⚡ Plataforma de Pérdidas — Avance por Alimentador</h1>"
         "<p style='color:#94a3b8;margin-top:4px'>Análisis técnico vs. no técnico · "
-        "F0 fundacional · balance jerárquico y cargabilidad por puesto</p>",
+        "topología · flujo de potencia · calidad de datos · riesgo de hurto (PU+SHAP)</p>",
         unsafe_allow_html=True,
     )
 
@@ -149,54 +160,113 @@ def main() -> None:
         st.error("⚠️ PNT < 0: error inequívoco de balance (§13). Primera hipótesis: "
                  "transferencia entre alimentadores no registrada.")
 
-    d1, d2 = st.columns(2)
-    with d1:
-        st.markdown("**Descomposición del balance de energía (§13)**")
-        waterfall = go.Figure(go.Waterfall(
-            orientation="v",
-            measure=["absolute", "relative", "relative", "relative", "relative"],
-            x=["Cabecera", "− Facturada", "− Alumbrado público", "− Técnicas", "= PNT"],
-            y=[bal["energy_header_kwh"], -bal["energy_billed_kwh"],
-               -bal["energy_streetlight_kwh"], -bal["energy_technical_kwh"], 0],
-            connector={"line": {"color": "#475569"}},
-        ))
-        waterfall.update_layout(height=360, template="plotly_dark",
-                                margin=dict(l=10, r=10, t=10, b=10))
-        st.plotly_chart(waterfall, use_container_width=True)
+    quality = _filt(data["quality"], fid)
+    zones = _filt(data["zones"], fid)
+    topo = _filt(data["topology"], fid)
+    pf = _filt(data["powerflow"], fid)
 
-    with d2:
-        st.markdown("**Clasificación de cargabilidad de puestos (§14.1)**")
-        if not load.empty:
-            counts = load["loadability_class"].value_counts().reset_index()
-            counts.columns = ["clase", "n"]
-            fig3 = px.bar(counts, x="n", y="clase", orientation="h", color="clase",
-                          color_discrete_map=CLASS_COLORS)
-            fig3.update_layout(height=360, template="plotly_dark", showlegend=False,
-                               margin=dict(l=10, r=10, t=10, b=10))
-            st.plotly_chart(fig3, use_container_width=True)
-        else:
-            st.info("Sin datos de cargabilidad para este alimentador.")
+    tab_bal, tab_topo, tab_pf, tab_risk = st.tabs(
+        ["⚖️ Balance & Cargabilidad", "🕸️ Topología & Calidad",
+         "🔌 Flujo de potencia", "🎯 Riesgo de hurto"])
 
-    m1, m2 = st.columns(2)
-    with m1:
+    with tab_bal:
+        d1, d2 = st.columns(2)
+        with d1:
+            st.markdown("**Descomposición del balance de energía (§13)**")
+            waterfall = go.Figure(go.Waterfall(
+                orientation="v",
+                measure=["absolute", "relative", "relative", "relative", "relative"],
+                x=["Cabecera", "− Facturada", "− Alumbrado público", "− Técnicas", "= PNT"],
+                y=[bal["energy_header_kwh"], -bal["energy_billed_kwh"],
+                   -bal["energy_streetlight_kwh"], -bal["energy_technical_kwh"], 0],
+                connector={"line": {"color": "#475569"}}))
+            waterfall.update_layout(height=360, template="plotly_dark",
+                                    margin=dict(l=10, r=10, t=10, b=10))
+            st.plotly_chart(waterfall, use_container_width=True)
+        with d2:
+            st.markdown("**Clasificación de cargabilidad de puestos (§14.1)**")
+            if not load.empty:
+                counts = load["loadability_class"].value_counts().reset_index()
+                counts.columns = ["clase", "n"]
+                fig3 = px.bar(counts, x="n", y="clase", orientation="h", color="clase",
+                              color_discrete_map=CLASS_COLORS)
+                fig3.update_layout(height=360, template="plotly_dark", showlegend=False,
+                                   margin=dict(l=10, r=10, t=10, b=10))
+                st.plotly_chart(fig3, use_container_width=True)
         st.markdown("**Puestos de transformación (cargabilidad por configuración de banco)**")
         if not load.empty:
             st.dataframe(
-                load[["site_id", "bank_config", "n_units", "capacity_kva",
-                      "s_max_kva", "loadability", "loadability_class", "bank_quality_flags"]]
+                load[["site_id", "bank_config", "n_units", "capacity_kva", "s_max_kva",
+                      "loadability", "loadability_class", "bank_quality_flags"]]
                 .sort_values("loadability", ascending=False),
-                use_container_width=True, hide_index=True, height=320)
-    with m2:
-        st.markdown("**Ranking de riesgo de clientes (proxy M1 — caída/recuperación)**")
-        if not risk.empty:
-            top = risk.sort_values("risk_score", ascending=False).head(30)
-            st.dataframe(top[["customer_unit_id", "risk_score", "flagged_drop"]],
-                         use_container_width=True, hide_index=True, height=320)
-            st.caption(f"Clientes marcados por caída sostenida: "
-                       f"{int(risk['flagged_drop'].sum())} de {len(risk)}")
+                use_container_width=True, hide_index=True, height=300)
 
-    st.caption("F0 fundacional. Fases F4/F6/F8 (flujo de potencia detallado, "
-               "estimación de estado, optimización de campaña con OR-Tools) en roadmap.")
+    with tab_topo:
+        if not topo.empty:
+            tr = topo.iloc[0]
+            tcols = st.columns(5)
+            _metric_card(tcols[0], "Nodos", f"{int(tr['n_nodes'])}")
+            _metric_card(tcols[1], "Tramos", f"{int(tr['n_edges'])}")
+            _metric_card(tcols[2], "Zonas de protección", f"{int(tr['n_zones'])}")
+            _metric_card(tcols[3], "Hallazgos de calidad", f"{int(tr['n_quality_findings'])}")
+            _metric_card(tcols[4], "Críticos", f"{int(tr['critical_findings'])}")
+        c1, c2 = st.columns([2, 3])
+        with c1:
+            st.markdown("**Hallazgos de calidad por regla (§8, R01–R25)**")
+            if not quality.empty:
+                byrule = quality.groupby(["rule_id", "severity"]).size().reset_index(name="n")
+                figq = px.bar(byrule, x="n", y="rule_id", color="severity", orientation="h",
+                              color_discrete_map={"critica": "#b91c1c", "alta": "#f59e0b",
+                                                  "media": "#38bdf8"})
+                figq.update_layout(height=320, template="plotly_dark",
+                                   margin=dict(l=10, r=10, t=10, b=10))
+                st.plotly_chart(figq, use_container_width=True)
+            else:
+                st.success("Sin hallazgos de calidad de datos.")
+        with c2:
+            st.markdown("**Detalle de anomalías (con valor sugerido)**")
+            if not quality.empty:
+                st.dataframe(quality[["rule_id", "element_id", "severity", "evidence",
+                                      "confidence", "suggested_value"]].head(200),
+                             use_container_width=True, hide_index=True, height=320)
+        st.markdown("**Zonas de protección — ramal como unidad de intervención (§7.5)**")
+        if not zones.empty:
+            st.dataframe(zones[["zone_id", "parent_zone", "n_nodes", "n_customers",
+                                "n_tx_sites", "has_upstream_device"]],
+                         use_container_width=True, hide_index=True, height=240)
+
+    with tab_pf:
+        if not pf.empty:
+            pr = pf.iloc[0]
+            pcols = st.columns(5)
+            _metric_card(pcols[0], "Pérdida primaria", f"{pr['primary_loss_kw']:.1f} kW",
+                         "Motor propio backward-forward sweep (§11)")
+            _metric_card(pcols[1], "V mín (pu)", f"{pr['v_min_pu']:.4f}")
+            _metric_card(pcols[2], "V máx (pu)", f"{pr['v_max_pu']:.4f}")
+            _metric_card(pcols[3], "Convergió", "Sí" if pr["converged"] else "No")
+            _metric_card(pcols[4], "Iteraciones", f"{int(pr['iterations'])}")
+            st.caption("El motor propio se valida automáticamente contra OpenDSS "
+                       "(tolerancia 2 % pérdidas / 0,5 % tensión, §11).")
+        else:
+            st.info("Sin resultados de flujo de potencia para este alimentador.")
+
+    with tab_risk:
+        st.markdown("**Ranking de riesgo de hurto — PU learning + no supervisado, "
+                    "calibrado, con razones SHAP (§15)**")
+        if not risk.empty:
+            cols = ["customer_unit_id", "risk_score", "score_pu", "score_unsup",
+                    "recoverable_kwh_month", "reason_1", "reason_2", "reason_3"]
+            cols = [c for c in cols if c in risk.columns]
+            top = risk.sort_values("risk_score", ascending=False).head(50)
+            st.dataframe(top[cols], use_container_width=True, hide_index=True, height=420,
+                         column_config={"risk_score": st.column_config.ProgressColumn(
+                             "Riesgo", min_value=0, max_value=1, format="%.2f")})
+            st.caption("Cada punto llega a campo con sus 3 razones en lenguaje operativo "
+                       "(criterio §22.10). Score calibrado (isotónica) para el cálculo de "
+                       "valor esperado en dólares.")
+
+    st.caption("F2 topología · F3/F5 balance · F4 flujo de potencia · F7 riesgo. "
+               "F6 (estimación de estado) y F8 (optimización de campaña OR-Tools) en roadmap.")
 
 
 main()

@@ -21,19 +21,20 @@ crítico y el tablero, ejecutable end-to-end sobre un universo sintético.
 | Modelo canónico `pydantic` + `lossan schema inspect` | ✅ | §4, §5 |
 | **Jerarquía Poste→Puesto→Unidad con reglas de agregación §5.2** | ✅ | §5.2 |
 | **Fórmulas P/Q/S/I y pérdidas §9.2** con tests de caso manual | ✅ | §9.2 |
-| Balance jerárquico + PNT + cargabilidad por configuración de banco | ✅ (F0) | §13, §14.1 |
-| Alumbrado público como término explícito del balance | ✅ (agregado) | §10 |
+| Balance jerárquico + PNT + cargabilidad por configuración de banco | ✅ | §13, §14.1 |
+| Alumbrado público como término explícito del balance | ✅ | §10 |
 | Esquema `field_inspections` (captura de campo) | ✅ | §23.1 |
-| **Dashboard web por alimentador** (Streamlit + Plotly) | ✅ | §18 |
-| Suite de pruebas (fórmulas, bancos, propiedades, end-to-end) | ✅ | §19 |
-| Topología `rustworkx`, zonas de protección, topología dinámica | 🔜 F2 | §6, §7 |
-| Flujo de potencia propio + OpenDSS + validación IEEE | 🔜 F4 | §11 |
+| **Dashboard web por alimentador** (Streamlit + Plotly, con pestañas) | ✅ | §18 |
+| **Topología `rustworkx` + trazas + zonas de protección + transferencias** | ✅ F2 | §6, §7 |
+| **Reglas de calidad de datos R01–R25** (motor por YAML) | ✅ F2 | §8 |
+| **Flujo de potencia propio (BFS) + exportador OpenDSS + validación cruzada** | ✅ F4 | §11 |
+| **Minería de etiquetas M1–M8 + PU learning (Elkan–Noto/Bagging/spies) + SHAP + Precision@k** | ✅ F7 | §15 |
+| Suite de pruebas (fórmulas, bancos, topología, flujo, ML, end-to-end) | ✅ | §19 |
 | Estimación de estado / ramales sin medición | 🔜 F6 | §14.3 |
-| PU learning + minería de etiquetas + SHAP | 🔜 F7 | §15 |
 | Priorización 4 M USD + OR-Tools + ruteo | 🔜 F8 | §17 |
 
 El dashboard muestra las fases planificadas como *roadmap* para que el avance
-por alimentador refleje el estado real del pipeline.
+por alimentador refleje el estado real del pipeline (hoy 6/8 fases = 75 %).
 
 ---
 
@@ -88,13 +89,28 @@ src/lossan/
     storage.py          # Bronze/Silver/Gold + DuckDB + hash incremental
   synth/
     generator.py        # generador de datos sintéticos parametrizable
+  topology/             # F2
+    graph.py            # grafo rustworkx + trazas (downstream/upstream/path/subtree)
+    zones.py            # zonas de protección (ramal operativo)
+    dynamic.py          # versiones topológicas + inferencia de transferencias
+    quality.py          # motor de reglas R01-R25
+  powerflow/            # F4
+    sweep.py            # motor propio backward-forward sweep
+    opendss_export.py   # exportador .dss (Line, Load, Transformer por unidad)
+    validate.py         # comparación automática de motores + caso canónico
+  ml/                   # F7
+    label_mining.py     # mecanismos M1-M8
+    features.py         # features anti-fuga con corte temporal
+    pu.py               # Elkan-Noto, Bagging PU, two-step spies
+    risk.py             # ensamble + isotónica + SHAP + Precision@k
   pipeline/
     technical.py        # física de pérdidas técnicas (compartida)
-    balance.py          # balance jerárquico, PNT, cargabilidad, riesgo
-    runner.py           # orquestación por alimentador + avance
+    balance.py          # balance jerárquico, PNT, cargabilidad
+    analyze.py          # orquestación F2+F3/F5+F4+F7 por alimentador
+    runner.py           # orquestación por alimentador + avance + transferencias
   dashboard/
-    app.py              # dashboard web por alimentador
-tests/                  # fórmulas, bancos, propiedades (hypothesis), end-to-end
+    app.py              # dashboard web por alimentador (pestañas)
+tests/                  # fórmulas, bancos, topología, flujo, ML, end-to-end
 ```
 
 ### Decisiones de diseño clave
