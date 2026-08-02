@@ -1,0 +1,22 @@
+# Datos y artefactos generados
+data/
+*.parquet
+*.duckdb
+
+# Entorno
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.hypothesis/
+.coverage
+htmlcov/
+build/
+dist/
+
+# IDE / SO
+.vscode/
+.idea/
+.DS_Store

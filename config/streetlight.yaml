@@ -1,0 +1,11 @@
+# Alumbrado público (§10). AP no medido = consumo conocido NO facturado, no PNT.
+streetlight:
+  hours_on_default: 11.5        # default fotocelda; preferir cálculo por efemérides (astral)
+  use_ephemeris: false          # habilitar en F3 con astral
+  latitude_default: 0.0
+  # Potencia y pérdidas por tecnología (W lámpara / factor pérdidas driver-balasto / cosφ)
+  technology:
+    led:            { ballast_loss_frac: 0.10, power_factor: 0.90 }
+    sodium:         { ballast_loss_frac: 0.18, power_factor: 0.90 }
+    mercury:        { ballast_loss_frac: 0.20, power_factor: 0.85 }
+    metal_halide:   { ballast_loss_frac: 0.15, power_factor: 0.90 }

@@ -1,0 +1,35 @@
+# Parámetros eléctricos y de calibración (§9, Anexo A). Valores por defecto documentados.
+electrical:
+  loss_factor_k: 0.15          # Buller-Woodrow FP = k*FC + (1-k)*FC^2 (calibrable)
+  # cosφ por clase tarifaria (calibrable contra factor de potencia de cabecera)
+  power_factor_by_class:
+    residential: 0.93
+    commercial: 0.90
+    industrial: 0.88
+    streetlight_led: 0.90
+    streetlight_magnetic: 0.85
+  # Coeficientes de Velander D_max = a*E + b*sqrt(E)
+  velander:
+    residential: { a: 0.0002, b: 0.03 }
+    commercial:  { a: 0.0003, b: 0.05 }
+    industrial:  { a: 0.0004, b: 0.08 }
+  # Factor de coincidencia FCoinc(n) = A + B/sqrt(n)
+  coincidence: { A: 0.20, B: 0.80 }
+  # Corrección de resistencia por temperatura (ref 20°C)
+  temperature:
+    alpha_al: 0.00403
+    alpha_cu: 0.00393
+    ref_c: 20.0
+    op_c_overhead: 50.0
+    op_c_underground: 65.0
+  # Tensiones nominales de referencia
+  voltage:
+    ll_mv: 13800.0
+    ll_lv: 380.0
+    ln_lv: 220.0
+    split_240: 240.0
+
+# Tolerancias de comparación de motores de flujo (§11)
+powerflow:
+  tol_losses_pct: 2.0
+  tol_voltage_pct: 0.5

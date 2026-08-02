@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lossan"
+version = "0.1.0"
+description = "Plataforma de análisis de pérdidas técnicas y no técnicas en redes de distribución (F0 + dashboard)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [{ name = "Perdidas" }]
+
+dependencies = [
+    "duckdb>=0.10",
+    "pyarrow>=14",
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "pydantic>=2.5",
+    "typer>=0.9",
+    "pyyaml>=6.0",
+    "loguru>=0.7",
+]
+
+[project.optional-dependencies]
+dashboard = ["streamlit>=1.30", "plotly>=5.18"]
+dev = ["pytest>=7.4", "hypothesis>=6.90", "pytest-cov>=4.1"]
+# Módulos completos de fases posteriores (no requeridos para F0):
+geo = ["geopandas", "shapely", "pyogrio", "pyproj"]
+topology = ["rustworkx", "networkx"]
+power = ["OpenDSSDirect.py", "pandapower"]
+ml = ["scikit-learn", "lightgbm", "xgboost", "pyod", "ruptures", "shap", "imbalanced-learn"]
+opt = ["ortools"]
+
+[project.scripts]
+lossan = "lossan.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["lossan"]

@@ -1,0 +1,39 @@
+# Volumetría de referencia (§2.1). TODOS son parámetros, nunca constantes en código.
+# El sistema debe operar sin cambios de código si cualquiera crece un orden de magnitud.
+scale:
+  feeders: 960
+  customer_units: 2700000
+  customer_sites: null        # a determinar en ingesta (< customer_units)
+  poles: 1600000
+  segments: 1600000           # validar en ingesta
+  transformer_sites: null     # a determinar en ingesta
+  transformer_units: null     # a determinar (> transformer_sites)
+  streetlights: null          # a determinar
+  history_months: 48          # rango 36-60
+
+# Perfil reducido para ejecución/demostración local (universo sintético pequeño).
+# El pipeline usa 'active_profile' para elegir la escala de una corrida.
+profiles:
+  demo:
+    feeders: 12
+    customers_per_feeder_mean: 2800
+    poles_per_feeder_mean: 1700
+    history_months: 24
+    theft_rate: 0.05          # fracción de clientes con hurto inyectado
+    seed: 20260802
+  full:
+    feeders: 960
+    customers_per_feeder_mean: 2800
+    poles_per_feeder_mean: 1700
+    history_months: 48
+    theft_rate: 0.05
+    seed: 20260802
+
+active_profile: demo
+
+# Objetivos de desempeño (§2.3)
+performance:
+  full_run_hours_target: 8
+  full_run_vcpu: 32
+  full_run_ram_gb: 128
+  recompute_universe_minutes_target: 30

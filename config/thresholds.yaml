@@ -1,0 +1,25 @@
+# Umbrales de clasificación y calidad (§14.1, §14.2, §5.5). Todos parametrizables.
+loadability:            # Cargabilidad = S_max_diversificada / S_capacidad_puesto (§14.1)
+  overloaded_critical: 1.20
+  overloaded: 1.00
+  high_load: 0.80
+  adequate: 0.30
+  underutilized: 0.15
+  # < underutilized => muy subutilizado
+
+imbalance:
+  warn_pct: 10.0         # %Desbalance de corriente (§14.2)
+
+bank:
+  open_delta_factor: 1.7320508075688772   # sqrt(3), capacidad V-V = 86.6% de 2S
+  unequal_kva_ratio_flag: 1.5             # P05: kVA muy dispares sin config que lo justifique
+
+balance:
+  residual_tolerance_pct: 0.5   # criterio de aceptación §22.3
+  pnt_negative_alert: true      # §13 PNT<0 es error inequívoco
+
+# Umbrales de mecanismos de minería de etiquetas (§15.2) — placeholders calibrables (F7)
+label_mining:
+  drop_recovery_pct: 0.40
+  drop_recovery_months: 3
+  jump_after_intervention_pct: 0.30

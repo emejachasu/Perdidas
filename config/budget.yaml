@@ -1,0 +1,23 @@
+# Modelo económico y presupuesto de campo (§17). Ningún valor va en código.
+budget:
+  field_usd: 4000000          # exclusivamente campo (§17)
+  exploration_reserve_frac: 0.075   # 5-10% para inspección aleatoria estratificada (§17.4)
+
+economics:
+  tariff_usd_per_kwh: 0.15
+  recovery_months: 18
+  # Costo por visita según tipo de puesto (la unidad de costo es el PUESTO/POSTE, §5.3-5.4)
+  cost_per_visit_usd:
+    customer_bt: 30
+    transformer_site: 45
+    protection_zone: 120
+    streetlight: 25
+  cost_normalization_usd:
+    customer_bt: 60
+    transformer_site: 200
+    streetlight: 40
+
+campaign:
+  visits_per_crew_day: 12
+  num_crews: 20
+  duration_days: 220
