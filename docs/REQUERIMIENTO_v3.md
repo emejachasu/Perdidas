@@ -26,9 +26,10 @@ presupuestal (4 M USD), usando ML robusto a etiquetas incompletas (PU learning).
 | §11 | Flujo de potencia propio + OpenDSS + validación cruzada | ✅ F4 | `powerflow/` |
 | §12 | Pérdidas técnicas | ✅ | `pipeline/technical.py` |
 | §13 | Balance jerárquico y PNT | ✅ | `pipeline/balance.py` |
-| §14 | Cargabilidad + desbalance + ramales | Cargabilidad ✅ / resto 🔜 F6 | `pipeline/balance.py` |
+| §14 | Cargabilidad + ramales sin medición (WLS) | ✅ (desbalance 🔜) | `pipeline/balance.py`, `stateest/` |
 | §15 | PU learning + minería de etiquetas + SHAP + Precision@k | ✅ F7 | `ml/` |
-| §16 | Agregación multinivel del riesgo | Parcial (score+zona) 🔜 F8 | `ml/risk.py` |
+| §16 | Agregación multinivel del riesgo (unidad→puesto→zona) | ✅ | `ml/risk.py`, `stateest/` |
+| §17 | Priorización 4 M USD + OR-Tools + reserva + ruteo | ✅ F8 | `prioritization/` |
 | §17 | Priorización 4 M USD + OR-Tools + ruteo | 🔜 F8 | `config/budget.yaml` |
 | §18 | Salidas, dashboard, KPIs | Dashboard ✅ | `dashboard/app.py` |
 | §19 | Validación y pruebas | Parcial ✅ | `tests/` |

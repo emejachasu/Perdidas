@@ -29,12 +29,12 @@ crítico y el tablero, ejecutable end-to-end sobre un universo sintético.
 | **Reglas de calidad de datos R01–R25** (motor por YAML) | ✅ F2 | §8 |
 | **Flujo de potencia propio (BFS) + exportador OpenDSS + validación cruzada** | ✅ F4 | §11 |
 | **Minería de etiquetas M1–M8 + PU learning (Elkan–Noto/Bagging/spies) + SHAP + Precision@k** | ✅ F7 | §15 |
-| Suite de pruebas (fórmulas, bancos, topología, flujo, ML, end-to-end) | ✅ | §19 |
-| Estimación de estado / ramales sin medición | 🔜 F6 | §14.3 |
-| Priorización 4 M USD + OR-Tools + ruteo | 🔜 F8 | §17 |
+| **Estimación de estado WLS + ramales sin medición (reconciliación por zona)** | ✅ F6 | §14.3 |
+| **Priorización 4 M USD (mochila MILP OR-Tools) + reserva de exploración + clustering + ruteo** | ✅ F8 | §17 |
+| Suite de pruebas (fórmulas, bancos, topología, flujo, estado, ML, campaña, e2e) | ✅ | §19 |
 
-El dashboard muestra las fases planificadas como *roadmap* para que el avance
-por alimentador refleje el estado real del pipeline (hoy 6/8 fases = 75 %).
+El pipeline completa **8/8 fases (100 %)** sobre el universo sintético. El
+dashboard refleja el avance real por alimentador.
 
 ---
 
@@ -103,10 +103,18 @@ src/lossan/
     features.py         # features anti-fuga con corte temporal
     pu.py               # Elkan-Noto, Bagging PU, two-step spies
     risk.py             # ensamble + isotónica + SHAP + Precision@k
+  stateest/             # F6
+    estimate.py         # WLS + residuos normalizados + reconciliación por zona
+  prioritization/       # F8
+    economics.py        # beneficio/costo/ROI por PUESTO (no por cliente)
+    optimize.py         # mochila MILP OR-Tools + greedy + dos etapas + exploración
+    routing.py          # HDBSCAN + secuenciación + órdenes de trabajo
+    plan.py             # plan de campaña + rankings entregables
   pipeline/
     technical.py        # física de pérdidas técnicas (compartida)
     balance.py          # balance jerárquico, PNT, cargabilidad
-    analyze.py          # orquestación F2+F3/F5+F4+F7 por alimentador
+    analyze.py          # orquestación F2+F3/F5+F4+F6+F7 por alimentador
+    prioritization_step.py  # F8 a nivel de sistema + marca de avance
     runner.py           # orquestación por alimentador + avance + transferencias
   dashboard/
     app.py              # dashboard web por alimentador (pestañas)

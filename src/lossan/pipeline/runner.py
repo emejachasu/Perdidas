@@ -113,6 +113,14 @@ def run(root: str, feeders: list[str] | None = None, force: bool = False,
     except Exception as e:  # pragma: no cover
         logger.warning(f"Detección de transferencias falló: {e}")
 
+    # --- F8: priorización con presupuesto (nivel sistema) ---
+    try:
+        from .prioritization_step import build_plan_and_mark
+        plan_res = build_plan_and_mark(lake, cfg)
+        logger.info(f"Plan de campaña: {plan_res}")
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"Priorización falló: {e}")
+
     processed = sum(1 for r in results if r["status"] == "processed")
     skipped = sum(1 for r in results if r["status"] == "skipped")
     elapsed = time.perf_counter() - t0

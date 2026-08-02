@@ -49,6 +49,7 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
 
     fg = None
     zones = None
+    node_to_zone = {}
     # --- F2: topología, zonas, calidad ---
     if segments is not None and not segments.empty:
         try:
@@ -56,8 +57,8 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
                                     run_quality_rules)
             fg = FeederGraph.build(fid, segments, sites)
             topo_findings = fg.validate()
-            zones, _ = build_protection_zones(fg, tables.get("switching_devices"),
-                                              sites, customers)
+            zones, node_to_zone = build_protection_zones(
+                fg, tables.get("switching_devices"), sites, customers)
             q = run_quality_rules(fid, fg, segments, sites,
                                   tables.get("transformer_units"), customers,
                                   tables.get("streetlights"),
@@ -91,6 +92,35 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
             stages.add("power_flow")
         except Exception as e:  # pragma: no cover
             logger.warning(f"[{fid}] flujo de potencia falló: {e}")
+
+    # --- F6: estimación de estado / ramales sin medición (§14.3) ---
+    if fg is not None and consumption is not None and customers is not None and sites is not None:
+        try:
+            from ..stateest import pseudo_measurements, reconcile_by_zone, run_wls
+            merged = consumption.merge(
+                customers[["customer_unit_id", "transformer_site_id"]],
+                on="customer_unit_id", how="left")
+            monthly = (merged.groupby(["transformer_site_id", "year_month"])["kwh"]
+                       .sum().reset_index())
+            stats = monthly.groupby("transformer_site_id")["kwh"].agg(["mean", "std"]).fillna(0.0)
+            stats["mean_kw"] = stats["mean"] / 730.0
+            stats["std_kw"] = stats["std"] / 730.0
+            stats = stats.reset_index().rename(columns={"transformer_site_id": "site_id"})
+            bal = gold["feeder_balance"].iloc[0]
+            measured_total_kw = max(
+                0.0, (bal["energy_header_kwh"] - bal["energy_technical_kwh"]) / hours_period)
+            ids, z, sigma = pseudo_measurements(stats)
+            res = run_wls(z, sigma, measured_total_kw)
+            node_of = sites.set_index("site_id")["node_id"].to_dict()
+            site_to_zone = {sid: node_to_zone.get(node_of.get(sid, ""), "HEAD") for sid in ids}
+            zone_se = reconcile_by_zone(ids, res.correction, res.normalized_residuals,
+                                        site_to_zone, fid)
+            zone_se["gross_error"] = bool(res.gross_error)
+            zone_se["chi2"] = round(res.chi2, 2)
+            gold["zone_state_estimation"] = zone_se
+            stages.add("state_estimation")
+        except Exception as e:  # pragma: no cover
+            logger.warning(f"[{fid}] estimación de estado falló: {e}")
 
     # --- F7: score de riesgo (PU + no supervisado + SHAP) ---
     if consumption is not None and customers is not None:

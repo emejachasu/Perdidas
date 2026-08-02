@@ -30,6 +30,16 @@ def test_generate_and_run_end_to_end(micro_config, tmp_path):
     # Las pérdidas técnicas deben ser positivas.
     assert (balance["energy_technical_kwh"] > 0).all()
 
+    # F2/F4/F6/F7/F8 integradas: entidades GOLD presentes y avance completo.
+    assert not lake.read_entity("gold", "data_quality_findings").empty
+    assert not lake.read_entity("gold", "powerflow_results").empty
+    assert not lake.read_entity("gold", "zone_state_estimation").empty
+    plan = lake.read_entity("gold", "inspection_plan")
+    summary = lake.read_entity("gold", "campaign_summary")
+    assert not plan.empty and not summary.empty
+    # tras la priorización el avance llega al 100% (8/8 fases)
+    assert (status["progress_pct"] == 100.0).all()
+
 
 def test_incremental_reuse(micro_config, tmp_path):
     root = str(tmp_path / "lake")

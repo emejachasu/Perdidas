@@ -55,6 +55,11 @@ def load_gold(root: str) -> dict[str, pd.DataFrame]:
         "topology": lake.read_entity("gold", "feeder_topology"),
         "powerflow": lake.read_entity("gold", "powerflow_results"),
         "transfers": lake.read_entity("gold", "feeder_transfers"),
+        "state_est": lake.read_entity("gold", "zone_state_estimation"),
+        "plan": lake.read_entity("gold", "inspection_plan"),
+        "summary": lake.read_entity("gold", "campaign_summary"),
+        "curve": lake.read_entity("gold", "allocation_curve"),
+        "rank_sites": lake.read_entity("gold", "ranking_sites"),
     }
 
 
@@ -138,6 +143,43 @@ def main() -> None:
                  column_config={"progress_pct": st.column_config.ProgressColumn(
                      "Avance", min_value=0, max_value=100, format="%.0f%%")})
 
+    # ============ PLAN DE CAMPAÑA (F8, nivel sistema) ============
+    summary = data["summary"]
+    if not summary.empty:
+        st.divider()
+        st.subheader("Plan de campaña — priorización con presupuesto de campo (§17)")
+        s = summary.iloc[0]
+        cc = st.columns(5)
+        _metric_card(cc[0], "Presupuesto", f"${s['budget_field_usd']/1e6:.1f} M",
+                     "Exclusivo de campo (§17)")
+        _metric_card(cc[1], "Puestos seleccionados", f"{int(s['sites_selected'])}")
+        _metric_card(cc[2], "Visitas totales", f"{int(s['visits_total'])}",
+                     "Dirigidas + reserva de exploración")
+        _metric_card(cc[3], "Beneficio esperado", f"${s['expected_benefit_usd']/1e6:.2f} M")
+        _metric_card(cc[4], "ROI campaña", f"{s['roi_campaign']:.1f}×")
+        pcols = [c for c in summary.columns if c.startswith("precision@")]
+        if pcols:
+            st.caption("Precision@k con k derivado del presupuesto (§17.2): " +
+                       " · ".join(f"{c.split('(')[0]}={s[c]:.2f}" for c in pcols))
+        g1, g2 = st.columns([3, 2])
+        with g1:
+            curve = data["curve"]
+            if not curve.empty:
+                st.markdown("**Curva de asignación óptima (energía recuperable vs presupuesto)**")
+                figc = px.line(curve, x="budget_usd", y="recoverable_kwh_month", markers=True)
+                figc.add_vline(x=float(s["budget_field_usd"]), line_dash="dash",
+                               line_color=PALETTE["accent"])
+                figc.update_layout(height=300, template="plotly_dark",
+                                   margin=dict(l=10, r=10, t=10, b=10))
+                st.plotly_chart(figc, use_container_width=True)
+        with g2:
+            rk = data["rank_sites"]
+            if not rk.empty:
+                st.markdown("**Top puestos por ROI**")
+                st.dataframe(rk[["site_id", "feeder_id", "n_units", "benefit_usd",
+                                 "cost_usd", "roi"]].head(15),
+                             use_container_width=True, hide_index=True, height=300)
+
     # ============ DRILL-DOWN POR ALIMENTADOR ============
     st.divider()
     st.subheader("Detalle por alimentador")
@@ -165,9 +207,9 @@ def main() -> None:
     topo = _filt(data["topology"], fid)
     pf = _filt(data["powerflow"], fid)
 
-    tab_bal, tab_topo, tab_pf, tab_risk = st.tabs(
+    tab_bal, tab_topo, tab_pf, tab_risk, tab_plan = st.tabs(
         ["⚖️ Balance & Cargabilidad", "🕸️ Topología & Calidad",
-         "🔌 Flujo de potencia", "🎯 Riesgo de hurto"])
+         "🔌 Flujo de potencia", "🎯 Riesgo de hurto", "🗺️ Estado & Plan"])
 
     with tab_bal:
         d1, d2 = st.columns(2)
@@ -265,8 +307,30 @@ def main() -> None:
                        "(criterio §22.10). Score calibrado (isotónica) para el cálculo de "
                        "valor esperado en dólares.")
 
-    st.caption("F2 topología · F3/F5 balance · F4 flujo de potencia · F7 riesgo. "
-               "F6 (estimación de estado) y F8 (optimización de campaña OR-Tools) en roadmap.")
+    with tab_plan:
+        se = _filt(data["state_est"], fid)
+        st.markdown("**Estimación de estado — carga no contabilizada por zona (§14.3)**")
+        if not se.empty:
+            figse = px.bar(se.sort_values("unaccounted_load_kw", ascending=False).head(20),
+                           x="unaccounted_load_kw", y="zone_id", orientation="h",
+                           color="max_norm_residual", color_continuous_scale="Reds")
+            figse.update_layout(height=300, template="plotly_dark",
+                                margin=dict(l=10, r=10, t=10, b=10))
+            st.plotly_chart(figse, use_container_width=True)
+            st.caption("Residuo normalizado alto + carga añadida ⇒ carga no contabilizada "
+                       "aguas abajo (candidata a PNT localizada, WLS proporcional al residuo).")
+        plan = _filt(data["plan"], fid)
+        st.markdown("**Órdenes de trabajo priorizadas (puesto/poste, con checklist §17.5)**")
+        if not plan.empty:
+            cols = [c for c in ["site_id", "n_units", "benefit_usd", "roi", "cluster",
+                                "crew", "day", "visit_seq", "checklist"] if c in plan.columns]
+            st.dataframe(plan[cols].head(100), use_container_width=True,
+                         hide_index=True, height=340)
+        else:
+            st.info("Este alimentador no tiene puestos seleccionados en el plan actual.")
+
+    st.caption("Fases completas: F2 topología · F3/F5 balance · F4 flujo de potencia · "
+               "F6 estimación de estado · F7 riesgo (PU+SHAP) · F8 priorización (OR-Tools).")
 
 
 main()
