@@ -1,0 +1,88 @@
+# Mapeo de esquema FGDB -> modelo canónico (§F1). EDITA esto para tu SIG real:
+# cada entidad canónica apunta a una capa (feature class / tabla) de tu FGDB y
+# renombra sus campos. Lo que no exista se omite con una advertencia.
+#
+# 'feeder_field' global: nombre del campo que lleva el id de alimentador en la
+# mayoría de capas (puede sobreescribirse por entidad).
+#
+# Este archivo viene configurado para la FGDB de MUESTRA que genera
+# `lossan export-sample --format fgdb` (mapeo identidad), para que puedas
+# probar la ingesta end-to-end antes de conectar tu FGDB real.
+
+feeder_field: feeder_id
+
+layers:
+  poles:
+    layer: poles                 # <-- reemplaza por tu feature class de postes
+    fields:
+      pole_id: pole_id           # canonical: source_field
+      pole_type: pole_type
+      height_m: height_m
+    # x/y se derivan de la geometría de punto automáticamente
+
+  sites:
+    layer: sites                 # puestos (transformación/cliente/AP...)
+    fields:
+      site_id: site_id
+      pole_id: pole_id
+      kind: kind
+      bank_config: bank_config
+      node_id: node_id
+
+  transformer_units:
+    layer: transformer_units     # unidades de transformador (placa)
+    fields:
+      unit_id: unit_id
+      site_id: site_id
+      sn_kva: sn_kva
+      p0_kw: p0_kw
+      pk_kw: pk_kw
+      voltage_ln: voltage_ln
+      phase: phase
+
+  segments:
+    layer: segments              # tramos / conductores (geometría de línea)
+    fields:
+      segment_id: segment_id
+      node_from: node_from
+      node_to: node_to
+      conductor_code: conductor_code
+      r_ohm_per_km: r_ohm_per_km
+      x_ohm_per_km: x_ohm_per_km
+      ampacity_a: ampacity_a
+      phase: phase
+      voltage_ll: voltage_ll
+      section: section
+      material: material
+    # length_m se deriva de la geometría si no se mapea
+
+  customers:
+    layer: customers
+    fields:
+      customer_unit_id: customer_unit_id
+      site_id: site_id
+      pole_id: pole_id
+      tariff_class: tariff_class
+      installed_load_kw: installed_load_kw
+      service_drop_kva: service_drop_kva
+      transformer_site_id: transformer_site_id
+
+  streetlights:
+    layer: streetlights
+    fields:
+      streetlight_id: streetlight_id
+      transformer_site_id: transformer_site_id
+      technology: technology
+      lamp_w: lamp_w
+
+  switching_devices:
+    layer: switching_devices
+    fields:
+      device_id: device_id
+      node_id: node_id
+      type: type
+      normal_state: normal_state
+
+# NOTA: el consumo histórico (consumption) y la cabecera (header_meters)
+# suelen venir del sistema comercial en tablas/CSV, no de la FGDB. Cárgalos con
+# `lossan ingest-consumption` o colócalos directamente como Parquet en BRONZE.

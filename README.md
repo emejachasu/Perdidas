@@ -64,6 +64,18 @@ lossan dashboard        # http://localhost:8501
 Cambia la escala en `config/scale.yaml` (`active_profile: demo | full`), o
 `lossan generate --profile full` para el universo objetivo (960 alimentadores).
 
+### Entrada/salida GIS (File Geodatabase)
+
+```bash
+lossan fgdb-layers  ruta/a/red.gdb          # inspeccionar capas de una FGDB
+lossan ingest-fgdb  ruta/a/red.gdb          # ingerir a BRONZE (mapeo en config/schema_mapping.yaml)
+lossan export-sample --fmt fgdb             # datos de prueba (CSV + GPKG + FileGDB)
+lossan export-results --fmt fgdb            # capas de resultados para ArcGIS (§18)
+```
+
+Lectura/escritura de FGDB con GDAL/OpenFileGDB (**sin `arcpy`**, §2.5). Guías:
+**[Windows paso a paso](docs/WINDOWS.md)** · **[Calibración del modelo](docs/TUNING.md)**.
+
 ## Pruebas
 
 ```bash

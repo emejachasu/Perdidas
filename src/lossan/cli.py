@@ -81,6 +81,66 @@ def schema_inspect() -> None:
             typer.echo(f"  - {field}: {typ} [{req}]")
 
 
+@app.command("export-sample")
+def export_sample_cmd(
+    root: str = typer.Option(None, help="Raíz del lakehouse."),
+    out: str = typer.Option("export/sample", help="Carpeta de salida."),
+    fmt: str = typer.Option("gpkg", help="Formato GIS: gpkg | fgdb."),
+    feeders: str = typer.Option(None, help="Alimentadores separados por coma (ej. F0000,F0001)."),
+) -> None:
+    """Exporta datos de prueba (CSV + capa GIS) para calibrar y probar la ingesta."""
+    from .io import export_sample
+
+    root = root or _default_root()
+    fl = feeders.split(",") if feeders else None
+    res = export_sample(root, out, fmt=fmt, feeders=fl)
+    typer.echo(json.dumps(res, indent=2))
+
+
+@app.command("export-results")
+def export_results_cmd(
+    root: str = typer.Option(None, help="Raíz del lakehouse."),
+    out: str = typer.Option("export/results", help="Ruta de salida (sin extensión)."),
+    fmt: str = typer.Option("gpkg", help="Formato GIS: gpkg | fgdb."),
+) -> None:
+    """Publica capas de resultados con geometría (riesgo, cargabilidad, plan)."""
+    from .io import export_results
+
+    root = root or _default_root()
+    res = export_results(root, out, fmt=fmt)
+    typer.echo(json.dumps(res, indent=2))
+
+
+@app.command("fgdb-layers")
+def fgdb_layers(path: str = typer.Argument(..., help="Ruta a la .gdb")) -> None:
+    """Lista las capas de una File Geodatabase."""
+    from .io import list_layers
+
+    for name in list_layers(path):
+        typer.echo(name)
+
+
+@app.command("ingest-fgdb")
+def ingest_fgdb_cmd(
+    path: str = typer.Argument(..., help="Ruta a la .gdb"),
+    root: str = typer.Option(None, help="Raíz del lakehouse."),
+    mapping: str = typer.Option(None, help="YAML de mapeo (default: config/schema_mapping.yaml)."),
+    extract_date: str = typer.Option(None, help="Fecha de extracción (YYYY-MM-DD)."),
+) -> None:
+    """Ingiere una FGDB a BRONZE aplicando el mapeo de esquema (§2.5)."""
+    import yaml
+
+    from .config import config_dir
+    from .io import ingest_fgdb
+
+    root = root or _default_root()
+    mpath = Path(mapping) if mapping else config_dir() / "schema_mapping.yaml"
+    mp = yaml.safe_load(Path(mpath).read_text())
+    counts = ingest_fgdb(path, root, mp, extract_date=extract_date)
+    typer.echo("Conteos reales ingeridos (§2.1):")
+    typer.echo(json.dumps(counts, indent=2))
+
+
 @app.command()
 def dashboard(
     root: str = typer.Option(None, help="Raíz del lakehouse."),
