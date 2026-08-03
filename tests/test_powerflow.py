@@ -46,3 +46,30 @@ def test_sweep_performance():
     res = solve_bfs(net)
     assert res.converged
     assert (time.perf_counter() - t0) < 0.5   # holgado para CI
+
+
+def test_3ph_converges_and_neutral():
+    from lossan.powerflow.validate import canonical_unbalanced_3ph_case
+    from lossan.powerflow.sweep3ph import solve_bfs_3ph
+    net = canonical_unbalanced_3ph_case()
+    res = solve_bfs_3ph(net)
+    assert res.converged and res.total_loss_kw > 0
+    # carga desbalanceada -> corriente de neutro no despreciable en cabecera
+    assert res.neutral_currents[0] > 1.0
+    assert res.max_unbalance_pct > 0
+
+
+def test_3ph_matches_opendss():
+    from lossan.powerflow.validate import (canonical_unbalanced_3ph_case,
+                                           compare_engines_3ph)
+    cmp = compare_engines_3ph(canonical_unbalanced_3ph_case())
+    if cmp["opendss_available"]:
+        assert cmp["within_loss_tol"], f"3φ dif {cmp['loss_diff_pct']}% > tol"
+
+
+def test_zmatrix_from_sequence_symmetry():
+    import numpy as np
+    from lossan.powerflow.sweep3ph import zmatrix_from_sequence
+    Z = zmatrix_from_sequence(complex(0.3, 0.6), complex(0.7, 1.8), 1.0)
+    assert np.allclose(Z, Z.T)                      # simétrica
+    assert abs(Z[0, 0]) > abs(Z[0, 1])              # propia > mutua

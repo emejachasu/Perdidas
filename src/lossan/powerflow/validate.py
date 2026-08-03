@@ -59,6 +59,57 @@ def canonical_radial_case() -> RadialNetwork:
                          v_base_ln=7200.0, three_phase=True)
 
 
+def canonical_unbalanced_3ph_case():
+    """Feeder 3φ desbalanceado de 4 nodos con matriz de impedancia y cargas por
+    fase distintas + un lateral monofásico (para validar el motor 3φ vs OpenDSS)."""
+    import numpy as np
+
+    from .sweep3ph import ThreePhaseNetwork, zmatrix_from_sequence
+
+    z1 = complex(0.3, 0.6)
+    z0 = complex(0.7, 1.8)
+    Z1 = zmatrix_from_sequence(z1, z0, 1.0)
+    Z2 = zmatrix_from_sequence(z1, z0, 0.5)
+    Z3 = zmatrix_from_sequence(z1, z0, 0.4)
+    nodes = ["SRC", "B1", "B2", "B3"]
+    branches = [(0, 1, Z1), (1, 2, Z2), (2, 3, Z3)]
+    loads = [
+        np.zeros(3, dtype=complex),
+        np.array([600 + 300j, 400 + 200j, 500 + 250j], dtype=complex),  # desbalanceada
+        np.array([300 + 150j, 350 + 175j, 200 + 100j], dtype=complex),
+        np.array([250 + 120j, 0, 0], dtype=complex),                    # lateral 1φ (fase A)
+    ]
+    return ThreePhaseNetwork(nodes=nodes, branches=branches, loads_kva=loads,
+                             v_base_ln=7200.0)
+
+
+def compare_engines_3ph(net) -> dict:
+    """Compara el motor 3φ propio contra OpenDSS (§11). OpenDSS opcional."""
+    import tempfile
+
+    from .opendss_export import export_dss_3ph, solve_with_opendss
+    from .sweep3ph import solve_bfs_3ph
+
+    tl, tv = _tolerances()
+    own = solve_bfs_3ph(net)
+    res = {"own_total_loss_kw": round(own.total_loss_kw, 4),
+           "own_v_min_pu": round(own.v_min_pu, 5),
+           "own_max_unbalance_pct": round(own.max_unbalance_pct, 2),
+           "own_neutral_head_a": round(own.neutral_currents[0], 2) if own.neutral_currents else 0.0,
+           "converged": own.converged, "opendss_available": False}
+    with tempfile.TemporaryDirectory() as td:
+        odss = solve_with_opendss(export_dss_3ph(net, f"{td}/case3.dss"))
+    if odss is None:
+        return res
+    res["opendss_available"] = True
+    res["opendss_total_loss_kw"] = round(odss["total_loss_kw"], 4)
+    denom = max(abs(odss["total_loss_kw"]), 1e-6)
+    diff = 100.0 * abs(own.total_loss_kw - odss["total_loss_kw"]) / denom
+    res["loss_diff_pct"] = round(diff, 3)
+    res["within_loss_tol"] = diff <= tl
+    return res
+
+
 def power_balance_error(net: RadialNetwork) -> float:
     """Error de conservación de potencia activa (invariante físico).
 

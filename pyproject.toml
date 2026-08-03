@@ -31,6 +31,8 @@ dependencies = [
 dashboard = ["streamlit>=1.30", "plotly>=5.18"]
 dev = ["pytest>=7.4", "hypothesis>=6.90", "pytest-cov>=4.1"]
 examples = ["matplotlib>=3.7", "jupyter>=1.0", "nbconvert>=7.0", "ipykernel>=6.0"]
+reports = ["jinja2>=3.1", "matplotlib>=3.7", "weasyprint>=60"]   # §18 reportes PDF
+orchestration = ["dagster>=1.5", "dagster-webserver>=1.5"]        # §2.3 Dagster
 # Aceleradores opcionales (el código degrada con elegancia si faltan):
 power = ["OpenDSSDirect.py", "pandapower"]      # F4 validación cruzada
 ml = ["lightgbm", "xgboost", "pyod", "shap", "imbalanced-learn"]  # F7 mejores modelos + SHAP

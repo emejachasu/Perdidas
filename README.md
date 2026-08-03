@@ -79,7 +79,12 @@ lossan ingest-header cabecera.csv           # medidor de cabecera por alimentado
 lossan feeder-report F0000                  # elementos conectados por traza + desglose de pérdidas
 lossan export-sample --fmt fgdb             # datos de prueba (CSV + GPKG + FileGDB)
 lossan export-results --fmt fgdb            # capas de resultados para ArcGIS (§18)
+lossan report --feeder F0000                # reporte ejecutivo PDF (o --consolidado)
+lossan inspection-sheet F0000-TS0007        # ficha de inspección por puesto/poste
 ```
+
+**Orquestación con Dagster** (§2.3): `dagster dev -m lossan.orchestration.dagster_defs`
+(assets particionados por alimentador, incremental por hash).
 
 Lectura/escritura de FGDB con GDAL/OpenFileGDB (**sin `arcpy`**, §2.5).
 

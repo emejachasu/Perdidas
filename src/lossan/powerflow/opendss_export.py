@@ -80,6 +80,38 @@ def transformer_dss(site_id: str, bank_config: BankConfig, units,
     return out
 
 
+def export_dss_3ph(net, out_path: str | Path, circuit_name: str = "feeder3ph") -> Path:
+    """Escribe una ThreePhaseNetwork como ``.dss`` con líneas de matriz 3×3 y
+    cargas por fase (desbalanceadas)."""
+    out = Path(out_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    v_ln_kv = net.v_base_ln / 1000.0
+    v_ll_kv = v_ln_kv * math.sqrt(3)
+    lines = ["Clear"]
+    src = _bus(net.nodes[0])
+    lines.append(f"New Circuit.{circuit_name} basekv={v_ll_kv:.5f} pu=1.0 phases=3 "
+                 f"bus1={src} MVAsc3=100000 MVAsc1=100000")
+    for k, (u, v, z) in enumerate(net.branches):
+        r = z.real; x = z.imag
+        rm = f"{r[0,0]:.6f} | {r[1,0]:.6f} {r[1,1]:.6f} | {r[2,0]:.6f} {r[2,1]:.6f} {r[2,2]:.6f}"
+        xm = f"{x[0,0]:.6f} | {x[1,0]:.6f} {x[1,1]:.6f} | {x[2,0]:.6f} {x[2,1]:.6f} {x[2,2]:.6f}"
+        lines.append(f"New Line.L{k} phases=3 bus1={_bus(net.nodes[u])}.1.2.3 "
+                     f"bus2={_bus(net.nodes[v])}.1.2.3 rmatrix=({rm}) xmatrix=({xm}) "
+                     f"Length=1 units=none")
+    for i, s in enumerate(net.loads_kva):
+        for ph in range(3):
+            if abs(s[ph]) <= 0:
+                continue
+            lines.append(f"New Load.LD{i}_{ph+1} phases=1 bus1={_bus(net.nodes[i])}.{ph+1} "
+                         f"kv={v_ln_kv:.5f} kW={s[ph].real:.4f} kvar={s[ph].imag:.4f} model=1")
+    lines.append(f"Set voltagebases=[{v_ll_kv:.5f}]")
+    lines.append("CalcVoltageBases")
+    lines.append("New Energymeter.M1 element=Line.L0 terminal=1")
+    lines.append("Solve")
+    out.write_text("\n".join(lines) + "\n")
+    return out
+
+
 def solve_with_opendss(dss_path: str | Path) -> dict | None:
     """Resuelve el ``.dss`` con OpenDSSDirect y devuelve pérdidas totales [kW].
 

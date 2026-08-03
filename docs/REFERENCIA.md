@@ -27,6 +27,8 @@ Paquete: `src/lossan/` · CLI: `lossan` · Cobertura de pruebas: `tests/` (51 te
 | `ingest-header <csv>` | Ingiere la cabecera a BRONZE |
 | `export-sample` | Datos de prueba (CSV + GPKG + FileGDB) |
 | `export-results` | Capas de resultados para ArcGIS (§18) |
+| `report` | Reporte ejecutivo por alimentador o consolidado (HTML/PDF) |
+| `inspection-sheet <site>` | Ficha de inspección por puesto/poste |
 | `data-templates` | Plantillas vacías (CSV + Excel) por dato requerido |
 
 ---
@@ -84,9 +86,12 @@ Pérdidas: `resistance_at_temp`, `conductor_loss_3ph_balanced/unbalanced`, `cond
 ### `lossan.powerflow.opendss_export`
 - `export_dss(net, path)` — `.dss` (Line/Load), `transformer_dss(...)` (Transformer por unidad con conexión de banco), `solve_with_opendss(path)`.
 
+### `lossan.powerflow.sweep3ph` — motor 3φ desbalanceado
+- `ThreePhaseNetwork`, `Sweep3phResult`, **`solve_bfs_3ph(net)`** (matriz 3×3, corriente de neutro), `zmatrix_from_sequence(z1, z0, L)`.
+
 ### `lossan.powerflow.validate`
-- `compare_engines(net)` — sweep vs OpenDSS dentro de tolerancia (§11).
-- `canonical_radial_case()`, `power_balance_error(net)`.
+- `compare_engines(net)` / `compare_engines_3ph(net)` — sweep vs OpenDSS dentro de tolerancia (§11).
+- `canonical_radial_case()`, `canonical_unbalanced_3ph_case()`, `power_balance_error(net)`.
 
 ## Estimación de estado (F6) — `lossan.stateest.estimate` (§14.3)
 - `pseudo_measurements(site_monthly)` — pseudo-medidas con incertidumbre histórica.
@@ -136,6 +141,15 @@ Pérdidas: `resistance_at_temp`, `conductor_loss_3ph_balanced/unbalanced`, `cond
 ## Generador sintético — `lossan.synth.generator`
 - `SyntheticGenerator(cfg)` — universo a escala (jerarquía, bancos, hurtos inyectados).
 - `generate_universe(root, cfg)` — escribe BRONZE y devuelve conteos.
+
+## Reportes (§18) — `lossan.reports.render`
+- `executive_report(root, feeder_id, out, pdf)` — reporte ejecutivo por alimentador (HTML/PDF).
+- `consolidated_report(root, out, pdf)` — consolidado regional.
+- `inspection_sheet(root, site_id, out, pdf)` — ficha por puesto/poste (mapa, checklist, unidades).
+
+## Orquestación (§2.3) — `lossan.orchestration.dagster_defs`
+- `defs` — `Definitions` de Dagster; assets `feeder_gold` (particionado por alimentador) y `system_results`.
+- Ejecutar: `LOSSAN_LAKEHOUSE=data/lake dagster dev -m lossan.orchestration.dagster_defs`.
 
 ## Entrada/Salida — `lossan.io`
 - `fgdb.ingest_fgdb / list_layers / read_layer` — FGDB con GDAL/OpenFileGDB (§2.5).

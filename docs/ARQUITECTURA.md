@@ -141,7 +141,8 @@ DuckDB, OpenDSS) son intercambiables: la lógica de dominio no los conoce.
 `rustworkx` (topología) · `OpenDSSDirect.py` (flujo) · `scikit-learn`,
 `lightgbm`, `pyod`, `ruptures`, `shap` (ML) · `ortools`, `HDBSCAN`
 (optimización/ruteo) · `geopandas`/`pyogrio`/GDAL (FGDB, sin `arcpy`) ·
-`streamlit`/`plotly` (dashboard) · `pytest`/`hypothesis` (pruebas).
+`streamlit`/`plotly` (dashboard) · `jinja2`/`weasyprint` (reportes PDF) ·
+`dagster` (orquestación) · `pytest`/`hypothesis` (pruebas).
 
 Ver la **[Referencia de módulos y funciones](REFERENCIA.md)** y el
 **[Análisis de brechas](BRECHAS.md)**.

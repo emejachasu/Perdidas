@@ -251,6 +251,43 @@ def data_templates(
     typer.echo(json.dumps(res, indent=2, ensure_ascii=False))
 
 
+@app.command("report")
+def report_cmd(
+    feeder: str = typer.Option(None, help="Alimentador (omitir para consolidado regional)."),
+    out: str = typer.Option(None, help="Ruta de salida (.pdf o .html)."),
+    root: str = typer.Option(None, help="Raíz del lakehouse."),
+    no_pdf: bool = typer.Option(False, help="Forzar HTML en vez de PDF."),
+) -> None:
+    """Genera el reporte ejecutivo por alimentador o consolidado regional (§18)."""
+    from .reports import consolidated_report, executive_report
+
+    root = root or _default_root()
+    pdf = not no_pdf
+    if feeder:
+        out = out or f"export/reporte_{feeder}.pdf"
+        path = executive_report(root, feeder, out, pdf=pdf)
+    else:
+        out = out or "export/reporte_consolidado.pdf"
+        path = consolidated_report(root, out, pdf=pdf)
+    typer.echo(f"Reporte escrito en: {path}")
+
+
+@app.command("inspection-sheet")
+def inspection_sheet_cmd(
+    site: str = typer.Argument(..., help="Id del puesto (ej. F0000-TS0007)."),
+    out: str = typer.Option(None, help="Ruta de salida (.pdf o .html)."),
+    root: str = typer.Option(None, help="Raíz del lakehouse."),
+    no_pdf: bool = typer.Option(False, help="Forzar HTML en vez de PDF."),
+) -> None:
+    """Genera la ficha de inspección por puesto/poste para la cuadrilla (§17.5)."""
+    from .reports import inspection_sheet
+
+    root = root or _default_root()
+    out = out or f"export/ficha_{site}.pdf"
+    path = inspection_sheet(root, site, out, pdf=not no_pdf)
+    typer.echo(f"Ficha escrita en: {path}")
+
+
 @app.command("feeder-report")
 def feeder_report(
     feeder: str = typer.Argument(..., help="Id de alimentador (ej. F0000)."),
