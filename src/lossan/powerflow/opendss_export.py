@@ -54,7 +54,7 @@ def export_dss(net: RadialNetwork, out_path: str | Path,
             continue
         lines.append(
             f"New Load.LD{i} phases=3 bus1={_bus(net.nodes[i])} kv={v_ll_kv:.4f} "
-            f"kW={s.real:.4f} kvar={s.imag:.4f} model=1 conn=wye"
+            f"kW={s.real:.4f} kvar={s.imag:.4f} model=1 conn=wye vminpu=0.8"
         )
     lines.append(f"Set voltagebases=[{v_ll_kv:.4f}]")
     lines.append("CalcVoltageBases")
@@ -103,7 +103,8 @@ def export_dss_3ph(net, out_path: str | Path, circuit_name: str = "feeder3ph") -
             if abs(s[ph]) <= 0:
                 continue
             lines.append(f"New Load.LD{i}_{ph+1} phases=1 bus1={_bus(net.nodes[i])}.{ph+1} "
-                         f"kv={v_ln_kv:.5f} kW={s[ph].real:.4f} kvar={s[ph].imag:.4f} model=1")
+                         f"kv={v_ln_kv:.5f} kW={s[ph].real:.4f} kvar={s[ph].imag:.4f} "
+                         f"model=1 vminpu=0.8")
     lines.append(f"Set voltagebases=[{v_ll_kv:.5f}]")
     lines.append("CalcVoltageBases")
     lines.append("New Energymeter.M1 element=Line.L0 terminal=1")

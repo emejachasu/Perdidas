@@ -73,3 +73,13 @@ def test_zmatrix_from_sequence_symmetry():
     Z = zmatrix_from_sequence(complex(0.3, 0.6), complex(0.7, 1.8), 1.0)
     assert np.allclose(Z, Z.T)                      # simétrica
     assert abs(Z[0, 0]) > abs(Z[0, 1])              # propia > mutua
+
+
+def test_ieee13_backbone_matches_opendss():
+    from lossan.powerflow.ieee import build_ieee13_backbone
+    from lossan.powerflow.validate import compare_engines_3ph
+    cmp = compare_engines_3ph(build_ieee13_backbone())
+    if cmp["opendss_available"]:
+        # motor propio reproduce las matrices de configuración IEEE-13 vs OpenDSS
+        assert cmp["within_loss_tol"], f"IEEE-13 dif {cmp['loss_diff_pct']}%"
+        assert cmp["own_neutral_head_a"] > 0    # cargas desbalanceadas -> neutro

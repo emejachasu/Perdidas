@@ -105,6 +105,24 @@ def spies(X, s, spy_frac: float = 0.15, seed: int = 0):
                     "reliable_negatives": int(len(reliable_neg))}
 
 
+def ipw_weights(X, inspected_mask, clip: float = 10.0, seed: int = 0):
+    """Pesos de probabilidad inversa (IPW, §15.4).
+
+    Modela la propensidad de inspección P(inspeccionado|x) y devuelve pesos
+    1/propensidad (acotados) para corregir el sesgo de selección: los casos poco
+    probables de haber sido inspeccionados pesan más en el entrenamiento.
+    """
+    X = np.asarray(X, dtype=float)
+    m = np.asarray(inspected_mask, dtype=int)
+    if m.sum() == 0 or m.sum() == len(m):
+        return np.ones(len(m))
+    clf = _base_estimator()
+    clf.fit(X, m)
+    prop = np.clip(clf.predict_proba(X)[:, 1], 1.0 / clip, 1.0)
+    w = 1.0 / prop
+    return w / w.mean()
+
+
 def fit_pu(X, s, method: str = "elkan_noto", seed: int = 0):
     """Punto de entrada: devuelve ``(scores, info)`` según el método elegido."""
     if method == "elkan_noto":

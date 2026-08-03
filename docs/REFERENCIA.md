@@ -93,6 +93,9 @@ Pérdidas: `resistance_at_temp`, `conductor_loss_3ph_balanced/unbalanced`, `cond
 - `compare_engines(net)` / `compare_engines_3ph(net)` — sweep vs OpenDSS dentro de tolerancia (§11).
 - `canonical_radial_case()`, `canonical_unbalanced_3ph_case()`, `power_balance_error(net)`.
 
+### `lossan.powerflow.ieee` — validación con matrices IEEE
+- `build_ieee13_backbone()` — tramo troncal IEEE-13 (config 601/602) con cargas desbalanceadas; `CONFIG_601`, `CONFIG_602`.
+
 ## Estimación de estado (F6) — `lossan.stateest.estimate` (§14.3)
 - `pseudo_measurements(site_monthly)` — pseudo-medidas con incertidumbre histórica.
 - `run_wls(z, sigma, measured_total)` — WLS anclado a cabecera; residuos normalizados, chi², LNR.
@@ -108,6 +111,7 @@ Pérdidas: `resistance_at_temp`, `conductor_loss_3ph_balanced/unbalanced`, `cond
 
 ### `lossan.ml.pu` — PU learning (§15.1)
 - `elkan_noto`, `bagging_pu`, `spies`, `fit_pu(X, s, method)`.
+- `ipw_weights(X, inspected_mask)` — pesos por propensidad inversa (§15.4).
 
 ### `lossan.ml.risk`
 - `train_risk_model(...)` — ensamble PU + no supervisado + isotónica + SHAP.
@@ -124,6 +128,8 @@ Pérdidas: `resistance_at_temp`, `conductor_loss_3ph_balanced/unbalanced`, `cond
 - `pipeline.balance.analyze_feeder(tables)` — F3/F5 (ENS incluida, §7.6).
 - `pipeline.technical` — `transformer_site_energy_loss_kwh`, `secondary_conductor_loss_kwh`.
 - `pipeline.reconciliation.reconcile_feeder / reconcile_all` — informe P/Q (§9.3).
+- `pipeline.imbalance.compute_site_imbalance(...)` — %desbalance por puesto + neutro + rebalanceo (§14.2).
+- `pipeline.montecarlo.monte_carlo_feeder(...)` — P10/P50/P90 de pérdidas (§12).
 - `pipeline.transfer_credit.apply_transfer_credits(lake, cfg)` — acredita transferencias (§7.3).
 - `pipeline.analyze.analyze_feeder_full(tables, level)` — F2+F3/F5(+F4+F6+F7 si `full`).
 - `pipeline.runner.run(root, level, ...)` — orquesta + incremental + transferencias + reconciliación; `list_feeders`.

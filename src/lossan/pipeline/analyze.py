@@ -35,6 +35,26 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
     gold.update(bal)
     stages |= {"electrical", "balance"}
 
+    # --- §14.2: desbalance por puesto (mapeo cliente→fase) ---
+    try:
+        from .imbalance import compute_site_imbalance
+        n_months = tables["header_meters"].shape[0]
+        imb = compute_site_imbalance(tables.get("customers"), tables.get("consumption"),
+                                     tables.get("sites"), cfg, hours_period=730.0 * n_months)
+        if imb is not None and not imb.empty:
+            gold["transformer_imbalance"] = imb
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"[{fid}] desbalance falló: {e}")
+
+    # --- §12: incertidumbre de pérdidas P10/P50/P90 (Monte Carlo) ---
+    try:
+        from .montecarlo import monte_carlo_table
+        b0 = gold["feeder_balance"].iloc[0]
+        gold["loss_uncertainty"] = monte_carlo_table(
+            fid, float(b0["energy_technical_kwh"]), float(b0["losses_total_kwh"]), cfg)
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"[{fid}] Monte Carlo falló: {e}")
+
     segments = tables.get("segments")
     sites = tables.get("sites")
     customers = tables.get("customers")

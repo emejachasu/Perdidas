@@ -28,3 +28,9 @@ label_mining:
 # Explicabilidad (SHAP): nº de casos de la cabeza del ranking a explicar (§17.2)
 explain:
   top_n: 1000
+
+# Monte Carlo de incertidumbre de pérdidas (§12): P10/P50/P90
+montecarlo:
+  n_samples: 500
+  sigma_technical: 0.12     # incertidumbre relativa de las pérdidas técnicas (P0/Pk/carga)
+  seed: 20260803

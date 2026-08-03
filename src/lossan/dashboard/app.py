@@ -61,6 +61,8 @@ def load_gold(root: str) -> dict[str, pd.DataFrame]:
         "curve": lake.read_entity("gold", "allocation_curve"),
         "rank_sites": lake.read_entity("gold", "ranking_sites"),
         "recon_causes": lake.read_entity("gold", "pq_reconciliation_causes"),
+        "imbalance": lake.read_entity("gold", "transformer_imbalance"),
+        "uncertainty": lake.read_entity("gold", "loss_uncertainty"),
     }
 
 
@@ -199,6 +201,12 @@ def main() -> None:
     _metric_card(k[2], "Técnicas", f"{bal['technical_pct']:.1f}%")
     _metric_card(k[3], "Residuo balance", f"{bal['residual_pct']:.3f}%",
                  "Objetivo < 0,5% (§22.3)")
+    unc = _filt(data["uncertainty"], fid)
+    if not unc.empty:
+        u = unc.iloc[0]
+        st.caption(f"Incertidumbre Monte Carlo (§12) — PNT P10/P50/P90: "
+                   f"{u['pnt_p10']/1e3:.0f} / {u['pnt_p50']/1e3:.0f} / {u['pnt_p90']/1e3:.0f} MWh · "
+                   f"Técnicas P10/P90: {u['technical_p10']/1e3:.0f} / {u['technical_p90']/1e3:.0f} MWh")
     if bal["pnt_negative_alert"]:
         st.error("⚠️ PNT < 0: error inequívoco de balance (§13). Primera hipótesis: "
                  "transferencia entre alimentadores no registrada.")
@@ -243,6 +251,19 @@ def main() -> None:
                       "loadability", "loadability_class", "bank_quality_flags"]]
                 .sort_values("loadability", ascending=False),
                 use_container_width=True, hide_index=True, height=300)
+        imb = _filt(data["imbalance"], fid)
+        if not imb.empty:
+            st.markdown("**Desbalance por puesto (§14.2) — corriente de neutro y rebalanceo**")
+            ic = st.columns(3)
+            ic[0].metric("Puestos desbalanceados", f"{int(imb['flagged'].sum())}/{len(imb)}",
+                         "> umbral configurado")
+            ic[1].metric("Desbalance medio", f"{imb['imbalance_pct'].mean():.0f}%")
+            ic[2].metric("Beneficio rebalanceo", f"{imb['rebalance_benefit_kwh'].sum()/1e3:.1f} MWh",
+                         "energía recuperable al balancear")
+            st.dataframe(imb.sort_values("imbalance_pct", ascending=False)
+                         [["site_id", "i_a", "i_b", "i_c", "i_neutral", "imbalance_pct",
+                           "rebalance_benefit_kwh"]].head(15),
+                         use_container_width=True, hide_index=True, height=240)
         rc = _filt(data["recon_causes"], fid)
         if not rc.empty:
             st.markdown("**Reconciliación de P y Q — impacto del cálculo actual por causa (§9.3)**")

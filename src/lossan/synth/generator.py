@@ -279,6 +279,8 @@ class SyntheticGenerator:
                 "feeder_id": fid,
                 "pole_id": rng.choice(pole_ids),
                 "tariff_class": name,
+                "phase": str(rng.choice(["A", "B", "C"])),   # acometida monofásica
+
                 "installed_load_kw": round(base / 30.0 / 24.0 * rng.uniform(3, 6), 3),
                 "service_drop_kva": round(base / 200.0 * rng.uniform(1.0, 1.5), 2),
                 "transformer_site_id": tx,
