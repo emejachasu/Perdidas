@@ -51,7 +51,10 @@ def build_inspection_plan(root: str, cfg: Config | None = None) -> dict:
     vpc = int(campaign["visits_per_crew_day"])
     crews = int(campaign["num_crews"])
 
-    candidates = build_candidates(risk, customers, poles, cfg)
+    rel = lake.read_entity("gold", "reliability_index")
+    rel_map = (rel.set_index("feeder_id")["reliability_index"].to_dict()
+               if not rel.empty else None)
+    candidates = build_candidates(risk, customers, poles, cfg, reliability_map=rel_map)
 
     # optimización dirigida (dos etapas) + comparación con greedy
     selected = two_stage_allocation(candidates, directed_budget)

@@ -34,6 +34,10 @@ El objetivo del proyecto (separar pérdidas técnicas de PNT, priorizar campo) e
 - **§14.2** **%desbalance por puesto** con mapeo cliente→fase, corriente de neutro y beneficio de rebalanceo.
 - **§12** **Monte Carlo P10/P50/P90** de pérdidas técnicas y PNT.
 - **§15.4** **IPW** (pesos por propensidad inversa de inspección).
+- **§10** **efemérides** de AP (astral) y **anomalías de AP** (tech mismatch, day-burning, sin puesto).
+- **§8.3** **índice de confiabilidad 0-100** por alimentador, que penaliza la priorización (§16).
+- **§9.4** **curvas de carga por clustering** (k-means sobre la forma mensual).
+- **§11** IEEE-13 con **capacitores** shunt (pérdidas −23 %), validado vs OpenDSS.
 - **F0** lakehouse Bronze/Gold + DuckDB + incremental por hash + generador sintético.
 - **§5** jerarquía poste/puesto/unidad y **agregación de banco** (delta abierto, desiguales, P0/Pk por unidad) con tests.
 - **§9** todas las fórmulas P/Q/S/I con test de caso manual y propiedades.
@@ -51,9 +55,9 @@ El objetivo del proyecto (separar pérdidas técnicas de PNT, priorizar campo) e
 | Ref | Qué falta para completarlo | Impacto |
 |---|---|---|
 | §7.3 | Transferencias ya acreditadas al balance; falta afinarlo **por intervalo de topología** (hoy a nivel de periodo) | Menor precisión temporal |
-| §8.2/§8.3 | Falta el **clasificador de auto-consistencia** (LightGBM predice el conductor por contexto) y el **índice de confiabilidad 0-100** por alimentador/zona | Menos detección de atributos mal cargados |
-| §9.4 | Curvas de carga por **clustering** (k-means/DTW); hoy se usa un FC representativo | Menor precisión horaria (afecta N2/N3) |
-| §10 | **Efemérides** (astral) para horas de AP por latitud/mes; anomalías de AP (day-burning, conexión ilegal, tecnología declarada≠instalada) | AP con horas fijas; sin categoría de hurto en AP |
+| §8.2 | Falta el **clasificador de auto-consistencia** (LightGBM predice el conductor por contexto); el índice de confiabilidad 0-100 ya está | Menos detección de atributos mal cargados |
+| §9.4 | Clustering mensual ✅; falta **DTW / resolución horaria** para curvas 24 h | Precisión horaria fina (N2/N3) |
+| §10 | Efemérides ✅ y anomalías (mismatch/day-burning) ✅; falta **conexión ilegal al circuito de AP** (requiere medición de frontera) | Categoría de hurto en AP |
 | §11 | IEEE-13 (líneas) ✅; faltan **reguladores, transformadores en línea y capacitores** de IEEE 13/34/123 completos | Reproducción íntegra del estándar |
 | §16 | Composición explícita riesgo unidad→puesto→zona (f/g/h) en una sola tabla | Ranking multinivel menos afinado |
 | §17.5 | Ruteo por **vecino más cercano**; falta VRP OR-Tools con ventanas de tiempo | Rutas subóptimas |
@@ -62,10 +66,10 @@ El objetivo del proyecto (separar pérdidas técnicas de PNT, priorizar campo) e
 ### ⬜ Pendiente (no implementado)
 | Ref | Elemento | Prioridad sugerida |
 |---|---|---|
-| §11/§19 | **IEEE 13/34/123 completos** (reguladores/transformadores/capacitores) con fallo de CI | 🟡 Media |
+| §11/§19 | **IEEE 13/34/123 con reguladores y transformadores en línea** (capacitores ✅) | 🟡 Media |
 | §14.1 | **Envejecimiento térmico** IEEE C57.91 / IEC 60076-7 | 🟢 Baja |
-| §10 | **Efemérides** de AP y anomalías de alumbrado (day-burning, conexión ilegal) | 🟡 Media |
-| §8.3 | **Índice de confiabilidad 0-100** por alimentador/zona | 🟡 Media |
+| §8.2 | Clasificador de **auto-consistencia** de conductores (LightGBM por contexto) | 🟡 Media |
+| §9.4 | Curvas **horarias / DTW** (hoy clustering mensual) | 🟢 Baja |
 | §18/§23 | Publicación a **PostGIS** y simbología **.lyrx** | 🟢 Baja |
 | §23.1 | Integración de captura con **Survey123/Field Maps** (externo a este repo) | 🟡 Media |
 
@@ -93,13 +97,13 @@ El objetivo del proyecto (separar pérdidas técnicas de PNT, priorizar campo) e
 
 ## Recomendación de siguientes pasos (orden de valor)
 
-La mayoría de las brechas están **hechas**. Restantes por valor:
+La gran mayoría de las brechas están **hechas**. Restantes (no-núcleo) por valor:
 
-1. **IEEE 13/34/123 completos** (reguladores, transformadores en línea, capacitores) (§11/§19).
-2. **Efemérides y anomalías de AP** (§10) e **índice de confiabilidad 0-100** (§8.3).
+1. **IEEE 13/34/123 con reguladores y transformadores en línea** (capacitores ya ✅) (§11).
+2. Clasificador de **auto-consistencia** de conductores (§8.2); **conexión ilegal al circuito de AP** (§10).
 3. **Envejecimiento térmico** IEEE C57.91 para sustentar reemplazos (§14.1).
-4. Publicación **PostGIS** + simbología **.lyrx** (§18); materializar capa SILVER.
-5. **Curvas de carga por clustering** (k-means/DTW) para N2/N3 (§9.4).
+4. **Curvas horarias / DTW** (§9.4); materializar capa **SILVER**.
+5. Publicación **PostGIS** + simbología **.lyrx** (§18); orquestación de la corrida real de 960.
 
 Nada de lo pendiente invalida el flujo actual: son profundizaciones sobre una
 base operativa y probada (51 tests en verde).

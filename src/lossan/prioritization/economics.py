@@ -18,9 +18,15 @@ from ..config import Config, load_config
 
 def build_candidates(customer_risk: pd.DataFrame, customers: pd.DataFrame,
                      poles: pd.DataFrame | None = None,
-                     cfg: Config | None = None) -> pd.DataFrame:
+                     cfg: Config | None = None,
+                     reliability_map: dict[str, float] | None = None) -> pd.DataFrame:
     """Agrega el riesgo de clientes al nivel de puesto de transformación (unidad
-    de visita) y calcula beneficio, costo, ROI y valor esperado neto."""
+    de visita) y calcula beneficio, costo, ROI y valor esperado neto.
+
+    Si se da ``reliability_map`` (feeder→índice 0-100), penaliza el beneficio de
+    los alimentadores poco confiables (§8.3/§16): donde el problema es de datos
+    y no de hurto, se invierte menos presupuesto de campo.
+    """
     cfg = cfg or load_config()
     econ = cfg.economics
     tariff = float(econ["tariff_usd_per_kwh"])
@@ -45,6 +51,12 @@ def build_candidates(customer_risk: pd.DataFrame, customers: pd.DataFrame,
         max_risk=("risk_score", "max"),
         recoverable_kwh_month=("recoverable_kwh_month", "sum"),
     ).reset_index().rename(columns={"transformer_site_id": "site_id"})
+
+    # penalización por confiabilidad del modelo (§8.3): factor 0,5-1,0
+    if reliability_map:
+        rel = cand["feeder_id"].map(reliability_map).fillna(100.0)
+        cand["reliability_index"] = rel
+        cand["benefit_usd"] = cand["benefit_usd"] * (0.5 + 0.5 * rel / 100.0)
 
     cand["cost_usd"] = cost_visit + cost_norm
     cand["ve_neto_usd"] = cand["benefit_usd"] - cand["cost_usd"]

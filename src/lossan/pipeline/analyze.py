@@ -55,6 +55,15 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
     except Exception as e:  # pragma: no cover
         logger.warning(f"[{fid}] Monte Carlo falló: {e}")
 
+    # --- §10.3: anomalías de alumbrado público ---
+    try:
+        from .streetlight import detect_ap_anomalies
+        ap = detect_ap_anomalies(tables.get("streetlights"), fid, cfg)
+        if ap is not None and not ap.empty:
+            gold["streetlight_anomalies"] = ap
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"[{fid}] anomalías AP falló: {e}")
+
     segments = tables.get("segments")
     sites = tables.get("sites")
     customers = tables.get("customers")
@@ -101,6 +110,10 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
                 "n_quality_findings": len(q),
                 "critical_findings": int((q["severity"] == "critica").sum()) if not q.empty else 0,
             }])
+            # §8.3: índice de confiabilidad del modelo 0-100
+            from .reliability import reliability_table
+            resid = float(gold["feeder_balance"].iloc[0]["residual_pct"])
+            gold["reliability_index"] = reliability_table(fid, q, fg.n_edges, resid)
             stages.add("topology")
         except Exception as e:  # pragma: no cover
             logger.warning(f"[{fid}] topología falló: {e}")
@@ -162,5 +175,16 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
             stages.add("ml_risk")
         except Exception as e:  # pragma: no cover
             logger.warning(f"[{fid}] modelo de riesgo falló: {e}")
+
+        # --- §9.4: curvas de carga por clustering ---
+        try:
+            from ..ml.load_curves import cluster_load_profiles
+            assign, cent = cluster_load_profiles(consumption, customers)
+            assign["feeder_id"] = fid
+            cent["feeder_id"] = fid
+            gold["load_clusters"] = assign
+            gold["load_curve_centroids"] = cent
+        except Exception as e:  # pragma: no cover
+            logger.warning(f"[{fid}] curvas de carga falló: {e}")
 
     return gold, stages

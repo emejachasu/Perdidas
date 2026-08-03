@@ -54,7 +54,9 @@ def analyze_feeder(tables: dict[str, pd.DataFrame], cfg: Config | None = None) -
     energy_billed = float(consumption["kwh"].sum())
 
     # --- Alumbrado público (§10): consumo conocido NO facturado ---
-    hours_on = float(cfg.streetlight["hours_on_default"])
+    from .streetlight import annual_hours_on
+    lat = float(cfg.streetlight.get("latitude_default", 0.0))
+    hours_on = annual_hours_on(lat, cfg)   # efemérides si use_ephemeris, si no default
     tech = cfg.streetlight["technology"]
     ap_month = 0.0
     for _, s in streetlights.iterrows():

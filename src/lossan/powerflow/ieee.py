@@ -60,3 +60,18 @@ def build_ieee13_backbone() -> ThreePhaseNetwork:
     ]
     return ThreePhaseNetwork(nodes=nodes, branches=branches, loads_kva=loads,
                              v_base_ln=2401.78)   # 4,16 kV LL / √3
+
+
+def build_ieee13_with_capacitors() -> ThreePhaseNetwork:
+    """IEEE-13 troncal + bancos de capacitores shunt (kvar negativos por fase).
+
+    Los capacitores del IEEE-13 (671: 200 kvar/φ; 680: 100 kvar φC) se modelan
+    como inyección de reactiva (constante Q). La modelación por susceptancia
+    constante y los reguladores/transformadores en línea quedan como refinamiento
+    (docs/BRECHAS.md).
+    """
+    net = build_ieee13_backbone()
+    # 671 (idx 2): 200 kvar por fase; 680 (idx 3): 100 kvar fase C
+    net.loads_kva[2] = net.loads_kva[2] - 1j * np.array([200, 200, 200], dtype=complex)
+    net.loads_kva[3] = net.loads_kva[3] - 1j * np.array([0, 0, 100], dtype=complex)
+    return net

@@ -293,12 +293,23 @@ class SyntheticGenerator:
         tx_ids = sites["site_id"].to_numpy()
         pole_ids = poles["pole_id"].to_numpy()
         techs = rng.choice(["led", "sodium", "mercury"], n, p=[0.6, 0.3, 0.1])
+        # tecnología instalada = declarada, salvo un % de discordancia (§10.3.4)
+        installed = techs.copy()
+        mism = rng.random(n) < 0.05
+        installed[mism] = "led"
+        # fotocelda averiada -> day-burning (§10.3.2)
+        photocell_fault = rng.random(n) < 0.03
+        tx_assigned = rng.choice(tx_ids, n).astype(object)
+        # algunas luminarias sin puesto asignable (R25 / §10.3.5)
+        tx_assigned[rng.random(n) < 0.02] = None
         return pd.DataFrame({
             "streetlight_id": [f"{fid}-L{i:05d}" for i in range(n)],
             "feeder_id": fid,
             "site_id": rng.choice(pole_ids, n),
-            "transformer_site_id": rng.choice(tx_ids, n),
+            "transformer_site_id": tx_assigned,
             "technology": techs,
+            "installed_technology": installed,
+            "photocell_fault": photocell_fault,
             "lamp_w": rng.choice([70.0, 100.0, 150.0], n),
         })
 

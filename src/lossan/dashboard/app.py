@@ -63,6 +63,8 @@ def load_gold(root: str) -> dict[str, pd.DataFrame]:
         "recon_causes": lake.read_entity("gold", "pq_reconciliation_causes"),
         "imbalance": lake.read_entity("gold", "transformer_imbalance"),
         "uncertainty": lake.read_entity("gold", "loss_uncertainty"),
+        "reliability": lake.read_entity("gold", "reliability_index"),
+        "ap_anomalies": lake.read_entity("gold", "streetlight_anomalies"),
     }
 
 
@@ -201,6 +203,12 @@ def main() -> None:
     _metric_card(k[2], "Técnicas", f"{bal['technical_pct']:.1f}%")
     _metric_card(k[3], "Residuo balance", f"{bal['residual_pct']:.3f}%",
                  "Objetivo < 0,5% (§22.3)")
+    rel = _filt(data["reliability"], fid)
+    if not rel.empty:
+        ri = rel.iloc[0]["reliability_index"]
+        color = "🟢" if ri >= 70 else ("🟡" if ri >= 40 else "🔴")
+        st.caption(f"{color} Índice de confiabilidad del modelo (§8.3): **{ri:.0f}/100** "
+                   f"— penaliza la priorización donde el problema es de datos, no de hurto.")
     unc = _filt(data["uncertainty"], fid)
     if not unc.empty:
         u = unc.iloc[0]
@@ -304,6 +312,11 @@ def main() -> None:
                 st.dataframe(quality[["rule_id", "element_id", "severity", "evidence",
                                       "confidence", "suggested_value"]].head(200),
                              use_container_width=True, hide_index=True, height=320)
+        ap = _filt(data["ap_anomalies"], fid)
+        if not ap.empty:
+            st.markdown("**Anomalías de alumbrado público (§10.3)**")
+            st.dataframe(ap.groupby(["anomaly", "severity"]).size().reset_index(name="n"),
+                         use_container_width=True, hide_index=True, height=140)
         st.markdown("**Zonas de protección — ramal como unidad de intervención (§7.5)**")
         if not zones.empty:
             st.dataframe(zones[["zone_id", "parent_zone", "n_nodes", "n_customers",

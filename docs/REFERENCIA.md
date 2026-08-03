@@ -94,7 +94,7 @@ Pérdidas: `resistance_at_temp`, `conductor_loss_3ph_balanced/unbalanced`, `cond
 - `canonical_radial_case()`, `canonical_unbalanced_3ph_case()`, `power_balance_error(net)`.
 
 ### `lossan.powerflow.ieee` — validación con matrices IEEE
-- `build_ieee13_backbone()` — tramo troncal IEEE-13 (config 601/602) con cargas desbalanceadas; `CONFIG_601`, `CONFIG_602`.
+- `build_ieee13_backbone()` / `build_ieee13_with_capacitors()` — IEEE-13 (config 601/602) con cargas desbalanceadas y capacitores shunt; `CONFIG_601`, `CONFIG_602`.
 
 ## Estimación de estado (F6) — `lossan.stateest.estimate` (§14.3)
 - `pseudo_measurements(site_monthly)` — pseudo-medidas con incertidumbre histórica.
@@ -130,6 +130,9 @@ Pérdidas: `resistance_at_temp`, `conductor_loss_3ph_balanced/unbalanced`, `cond
 - `pipeline.reconciliation.reconcile_feeder / reconcile_all` — informe P/Q (§9.3).
 - `pipeline.imbalance.compute_site_imbalance(...)` — %desbalance por puesto + neutro + rebalanceo (§14.2).
 - `pipeline.montecarlo.monte_carlo_feeder(...)` — P10/P50/P90 de pérdidas (§12).
+- `pipeline.streetlight` — `compute_hours_on/annual_hours_on` (efemérides) y `detect_ap_anomalies` (§10).
+- `pipeline.reliability.reliability_index(...)` — índice 0-100 del modelo (§8.3).
+- `ml.load_curves.cluster_load_profiles(...)` — curvas de carga por clustering (§9.4).
 - `pipeline.transfer_credit.apply_transfer_credits(lake, cfg)` — acredita transferencias (§7.3).
 - `pipeline.analyze.analyze_feeder_full(tables, level)` — F2+F3/F5(+F4+F6+F7 si `full`).
 - `pipeline.runner.run(root, level, ...)` — orquesta + incremental + transferencias + reconciliación; `list_feeders`.
