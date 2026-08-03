@@ -46,6 +46,10 @@ class SweepResult:
 
 
 def solve_bfs(net: RadialNetwork, tol: float = 1e-6, max_iter: int = 100) -> SweepResult:
+    """Resuelve el flujo por barrido hacia atrás/adelante (backward-forward sweep).
+
+    Devuelve tensiones por nodo, corrientes y pérdidas por rama, y el total.
+    """
     n = len(net.nodes)
     phases = 3.0 if net.three_phase else 1.0
     v0 = net.v_base_ln

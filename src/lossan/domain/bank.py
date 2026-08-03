@@ -120,6 +120,7 @@ def evaluate_bank(
     units: list[UnitPlate],
     open_delta_factor: float = DEFAULT_OPEN_DELTA_FACTOR,
 ) -> BankResult:
+    """Evalúa un puesto: capacidad, excedente monofásico y P0 total (§5.2)."""
     capacity, headroom = bank_capacity(config, units, open_delta_factor)
     return BankResult(
         capacity_kva=capacity,

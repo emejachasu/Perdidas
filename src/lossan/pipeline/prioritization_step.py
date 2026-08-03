@@ -14,6 +14,8 @@ from .runner import PIPELINE_STAGES
 
 
 def build_plan_and_mark(lake: Lakehouse, cfg: Config) -> dict:
+    """Construye el plan de campaña (F8) y marca la fase 'prioritization' en el
+    avance de cada alimentador (lleva el progreso a 8/8)."""
     res = build_inspection_plan(str(lake.root), cfg)
 
     # marcar la fase 'prioritization' en el avance de cada alimentador

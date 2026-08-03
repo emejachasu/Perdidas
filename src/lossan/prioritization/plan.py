@@ -26,6 +26,12 @@ def _precision_at_k(risk: pd.DataFrame, truth_ids: set, k: int) -> float:
 
 
 def build_inspection_plan(root: str, cfg: Config | None = None) -> dict:
+    """Construye el plan de campaña completo y escribe los entregables en GOLD.
+
+    Optimiza bajo presupuesto (dos etapas + reserva de exploración), agrupa y
+    rutea los puestos, y produce los rankings (alimentadores, zonas, puestos,
+    unidades) y el resumen con Precision@k.
+    """
     cfg = cfg or load_config()
     lake = Lakehouse(root)
 

@@ -16,6 +16,11 @@ from .balance import analyze_feeder
 
 def analyze_feeder_full(tables: dict[str, pd.DataFrame],
                         cfg: Config | None = None) -> tuple[dict[str, pd.DataFrame], set[str]]:
+    """Ejecuta F2+F3/F5+F4+F6+F7 sobre un alimentador.
+
+    Devuelve ``(tablas_gold, fases_completadas)``. Cada bloque avanzado es
+    tolerante a fallos: un error en un módulo no impide entregar el resto.
+    """
     cfg = cfg or load_config()
     fid = tables["header_meters"]["feeder_id"].iloc[0]
     gold: dict[str, pd.DataFrame] = {}

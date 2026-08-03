@@ -41,6 +41,7 @@ def _bronze_entities(lake: Lakehouse, fid: str) -> dict[str, pd.DataFrame]:
 
 
 def list_feeders(lake: Lakehouse) -> list[str]:
+    """Lista los alimentadores presentes en BRONZE (por partición de cabecera)."""
     base = lake.root / "bronze" / "header_meters"
     if not base.exists():
         return []

@@ -27,6 +27,12 @@ def run_quality_rules(
     load_map: dict[str, float] | None = None,
     cfg: Config | None = None,
 ) -> pd.DataFrame:
+    """Ejecuta las reglas R01-R25 sobre un alimentador y devuelve los hallazgos.
+
+    Cada hallazgo lleva ``rule_id, element_id, severity, evidence, confidence`` y
+    el ``suggested_value`` cuando aplica. Las reglas se activan/parametrizan por
+    ``config/rules.yaml``.
+    """
     cfg = cfg or load_config()
     R = cfg.rules
     findings: list[dict] = []

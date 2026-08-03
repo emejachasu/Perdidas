@@ -19,6 +19,7 @@ def _repo_root() -> Path:
 
 
 def config_dir() -> Path:
+    """Directorio de configuración (``$LOSSAN_CONFIG_DIR`` o ``<repo>/config``)."""
     env = os.environ.get("LOSSAN_CONFIG_DIR")
     if env:
         return Path(env)

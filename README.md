@@ -79,6 +79,11 @@ lossan export-results --fmt fgdb            # capas de resultados para ArcGIS (�
 
 Lectura/escritura de FGDB con GDAL/OpenFileGDB (**sin `arcpy`**, §2.5).
 
+**Documentación:**
+**[Arquitectura](docs/ARQUITECTURA.md)** ·
+**[Referencia de módulos y funciones](docs/REFERENCIA.md)** ·
+**[Análisis de brechas](docs/BRECHAS.md)**
+
 **Guías:**
 **[Datos requeridos (inventario)](docs/DATOS_REQUERIDOS.md)** ·
 **[Modelo de datos y conectividad](docs/DATA_MODEL.md)** ·

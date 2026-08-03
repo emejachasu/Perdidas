@@ -56,6 +56,7 @@ def _greedy_mask(costs, roi, budget, max_visits):
 
 def greedy_roi(candidates: pd.DataFrame, budget_usd: float,
                max_visits: int | None = None) -> pd.DataFrame:
+    """Selección voraz por ROI descendente hasta agotar el presupuesto (baseline)."""
     cand = candidates.reset_index(drop=True)
     sel = _greedy_mask(cand["cost_usd"].to_numpy(), cand["roi"].to_numpy(),
                        budget_usd, max_visits)
