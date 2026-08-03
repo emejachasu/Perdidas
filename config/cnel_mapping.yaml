@@ -1,0 +1,185 @@
+# ---------------------------------------------------------------------------
+# Mapeo del modelo de datos de CNEL EP (SIGELEC / ArcFM) al modelo canónico.
+#
+# Jerarquía real de CNEL (confirmada en las relationship classes):
+#
+#   ESTRUCTURA (soporte físico)            EstructuraSoporte / EstructuraANivel /
+#     │                                     EstructuraSubterranea
+#     ├── PUESTO (agrupación funcional)    PuestoTransfDistribucion, PuestoSeccionador,
+#     │     └── UNIDAD (equipo con placa)  UNIDADTRANSFDISTRIBUCION, UNIDADFUSIBLE, ...
+#     │
+#     └── PUNTO DE CARGA                   PuntoCarga  (1 por edificio/predio)
+#           └── CONEXIÓN CONSUMIDOR        CONEXIONCONSUMIDOR  (N medidores por punto)
+#
+# El vínculo puesto→unidad y puntoCarga→conexión es por GLOBALID (PK) contra el
+# campo <PADRE>GLOBALID (FK) del hijo. La conectividad de red usa el par
+# CIRCUITSOURCEGUID (padre) / PARENTCIRCUITSOURCEGUID (hijo) de ArcFM.
+# ---------------------------------------------------------------------------
+
+# Campo con el identificador de alimentador (presente en casi todas las capas).
+feeder_field: ALIMENTADORID
+
+# --- Jerarquía: qué capa es padre de cuál y por qué claves ---------------
+hierarchy:
+  # PUESTO -> UNIDAD (1:N). Clave: GLOBALID del puesto = <FK> de la unidad.
+  site_units:
+    transformer:
+      site_layer: PuestoTransfDistribucion
+      unit_layer: UNIDADTRANSFDISTRIBUCION
+      unit_fk: PUESTOTRANSFDISTGLOBALID
+    switch_fuse:
+      site_layer: PuestoSeccionadorFusible
+      unit_layer: UNIDADFUSIBLE
+      unit_fk: PUESTOSECFUSIBLEGLOBALID
+    protection_dynamic:
+      site_layer: PuestoProteccionDinamico
+      unit_layer: UNIDADPROTECCIONDINAMICO
+      unit_fk: PUESTOPROTDINAMGLOBALID
+    voltage_regulator:
+      site_layer: PuestoReguladorTension
+      unit_layer: UNIDADREGULADORTENSION
+      unit_fk: PUESTOREGTENSGLOBALID
+    capacitor:
+      site_layer: PuestoCorrectorFactorPotencia
+      unit_layer: UNIDADCAPACITOR
+      unit_fk: PUESTOCORRFACPOTGLOBALID
+    lv_protection:
+      site_layer: PuestoProteccionBajaTension
+      unit_layer: UNIDADPROTECCIONBAJATENSION
+      unit_fk: PUESTOPROTECCIONBTGLOBALID
+
+  # PUNTO DE CARGA -> CONEXIONES CONSUMIDOR (1:N). El caso del edificio.
+  load_point:
+    layer: PuntoCarga
+    connection_layer: CONEXIONCONSUMIDOR
+    connection_fk: PUNTOCARGAGLOBALID
+    # el punto de carga cuelga de un puesto de transformación
+    transformer_fk: PUESTOTRANSFDISTGLOBALID
+
+  # ESTRUCTURA (soporte) -> puestos y puntos de carga. Tres tipos de soporte;
+  # cada hijo trae los tres campos y solo uno viene informado.
+  structures:
+    layers: [EstructuraSoporte, EstructuraANivel, EstructuraSubterranea]
+    child_fks:
+      EstructuraSoporte: ESTRUCTURASOPORTEGLOBALID
+      EstructuraANivel: ESTRUCTURANIVELGLOBALID
+      EstructuraSubterranea: ESTRUCTURASUBTERRANEAGLOBALID
+
+  # Conectividad de red de ArcFM (traza padre-hijo).
+  circuit_trace:
+    parent_key: CIRCUITSOURCEGUID
+    child_key: PARENTCIRCUITSOURCEGUID
+
+# --- Mapeo de campos por entidad canónica --------------------------------
+layers:
+  poles:                       # canónico 'poles' = ESTRUCTURA de soporte
+    layer: EstructuraSoporte
+    fields:
+      pole_id: GLOBALID
+      pole_type: TIPOESTRUCTURA
+      height_m: ALTURA
+
+  sites:                       # puestos de transformación
+    layer: PuestoTransfDistribucion
+    fields:
+      site_id: GLOBALID
+      site_code: CODIGOPUESTO
+      pole_id: ESTRUCTURASOPORTEGLOBALID
+      bank_config_raw: CONFIGURACIONLADOBAJA   # -> BankConfig (ver domains)
+      phase_raw: FASECONEXION                  # -> Phase (ver domains)
+      voltage_mv: VOLTAJE
+      declared_kva: POTENCIAKVA
+      metered: MEDIDO
+      node_id: CIRCUITSOURCEGUID
+
+  transformer_units:           # unidades del banco
+    layer: UNIDADTRANSFDISTRIBUCION
+    fields:
+      unit_id: GLOBALID
+      site_id: PUESTOTRANSFDISTGLOBALID
+      sn_kva: POTENCIANOMINAL                  # String con dominio -> numérico
+      voltage_ln: TENSIONLADOALTA
+      phase_raw: FASECONEXION
+      serial: NUMEROSERIE
+      brand: MARCA
+      model: MODELO
+      unit_type: TIPO
+    # P0/Pk NO existen en la GDB: se toman del catálogo por kVA y se marca
+    # plate_source='catalog' (§Anexo B punto 4).
+
+  load_points:                 # PUNTO DE CARGA (el "edificio")
+    layer: PuntoCarga
+    fields:
+      load_point_id: GLOBALID
+      transformer_site_id: PUESTOTRANSFDISTGLOBALID
+      pole_id: ESTRUCTURASOPORTEGLOBALID
+      phase_raw: FASECONEXION
+      reading_route: RUTALECTURA
+      reading_sequence: SECUENCIALECTURA
+      x: COORD_X
+      y: COORD_Y
+
+  customers:                   # CONEXION CONSUMIDOR = unidad de servicio (medidor)
+    layer: CONEXIONCONSUMIDOR
+    fields:
+      customer_unit_id: GLOBALID
+      site_id: PUNTOCARGAGLOBALID              # su punto de carga (puesto)
+      customer_code: CODIGOCLIENTE             # cruce con el sistema comercial
+      meter_serial: MDENUMFAB
+      meter_brand: MEDMAR
+      meter_type: TIPOMEDIDOR
+      phase_raw: SECUENCIAFASE
+      prepaid: PREPAGO
+      status: ESTADO
+
+  streetlights:
+    layer: Luminaria
+    fields:
+      streetlight_id: GLOBALID
+      pole_id: ESTRUCTURASOPORTEGLOBALID
+      transformer_site_id: PARENTCIRCUITSOURCEGUID
+      phase_raw: FASECONEXION
+
+  switching_devices:
+    layer: PuestoProteccionDinamico
+    fields:
+      device_id: GLOBALID
+      node_id: CIRCUITSOURCEGUID
+      pole_id: ESTRUCTURASOPORTEGLOBALID
+      phase_raw: FASECONEXION
+
+# --- Decodificación de dominios ------------------------------------------
+# IMPORTANTE: el diccionario entregado lista los NOMBRES de dominio pero no sus
+# valores. Aquí van los del estándar ArcFM; VERIFICAR contra los dominios reales
+# de la GDB con `lossan cnel-domains <gdb>` y ajustar si difieren.
+domains:
+  # 'Phase Designation' de ArcFM: bitmask C=1, B=2, A=4.
+  phase_designation:
+    1: C
+    2: B
+    3: BC
+    4: A
+    5: AC
+    6: AB
+    7: ABC
+
+  # 'Config Lado Baja Banco Transf' -> configuración de banco (§5.2).
+  # Las claves se comparan en mayúsculas y sin espacios.
+  bank_config:
+    MONOFASICO: single
+    MONOFASICA: single
+    SIMPLE: single
+    ESTRELLA: wye_closed
+    ESTRELLACERRADA: wye_closed
+    YCERRADA: wye_closed
+    DELTA: delta_closed
+    DELTACERRADA: delta_closed
+    DELTAABIERTA: open_delta
+    VV: open_delta
+    ESTRELLAABIERTADELTAABIERTA: open_wye_open_delta
+    YABIERTADELTAABIERTA: open_wye_open_delta
+    DELTA4HILOS: delta_4wire
+    INDEPENDIENTE: independent
+
+  # Estado de la conexión consumidor que cuenta como servicio activo.
+  active_status_values: [1, "1", "ACTIVO", "A"]

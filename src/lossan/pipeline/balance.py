@@ -32,6 +32,31 @@ def _classify_loadability(ratio: float, th: dict) -> str:
     return LoadabilityClass.VERY_UNDERUTILIZED.value
 
 
+def _site_smax_from_load_points(tables, cfg) -> dict[str, float]:
+    """S_max por puesto de transformación agregando PUNTOS DE CARGA (§5.3).
+
+    La coincidencia se aplica dos veces y en el orden correcto: primero dentro de
+    cada punto de carga (entre sus conexiones) y luego entre los puntos de carga
+    que cuelgan del transformador. Sumar los picos de los medidores uno a uno
+    sobrestima la demanda del puesto.
+    """
+    try:
+        from .loadpoint import aggregate_load_points
+        lp = aggregate_load_points(tables.get("consumption"), tables.get("customers"), cfg)
+        if lp is None or lp.empty or "transformer_site_id" not in lp.columns:
+            return {}
+        coin = cfg.electrical["coincidence"]
+        out: dict[str, float] = {}
+        for tx, g in lp.groupby("transformer_site_id"):
+            if tx is None or (isinstance(tx, float) and pd.isna(tx)):
+                continue
+            out[tx] = F.diversified_demand_kw(g["s_max_kva"].tolist(),
+                                              coin["A"], coin["B"])
+        return out
+    except Exception:  # pragma: no cover
+        return {}
+
+
 def analyze_feeder(tables: dict[str, pd.DataFrame], cfg: Config | None = None,
                    with_risk_proxy: bool = True) -> dict[str, pd.DataFrame]:
     """Ejecuta el balance de un alimentador y devuelve tablas GOLD.
@@ -86,6 +111,11 @@ def analyze_feeder(tables: dict[str, pd.DataFrame], cfg: Config | None = None,
         on="customer_unit_id", how="left",
     ).groupby("transformer_site_id")["kwh"].sum()
 
+    # Demanda por puesto agregando puntos de carga con coincidencia en dos
+    # niveles (conexiones→punto, puntos→transformador). Si no hay puntos de
+    # carga, se cae al estimador por energía media del puesto.
+    smax_by_site = _site_smax_from_load_points(tables, cfg)
+
     load_rows, energy_technical = [], 0.0
     units_by_site = {sid: g for sid, g in units.groupby("site_id")}
     for _, s in sites.iterrows():
@@ -100,7 +130,13 @@ def analyze_feeder(tables: dict[str, pd.DataFrame], cfg: Config | None = None,
         # AP del puesto por traza (§10.2), no repartida uniformemente
         site_energy += ap_by_site.get(sid, 0.0)
         p_mean = F.mean_power_kw(site_energy, hours_period) if site_energy > 0 else 0.0
-        s_max = (p_mean / fc) / site_pf if p_mean > 0 else 0.0
+        if sid in smax_by_site:
+            # demanda de los puntos de carga (con coincidencia) + AP del puesto
+            ap_kva = (F.mean_power_kw(ap_by_site.get(sid, 0.0), hours_period)
+                      / fc / site_pf) if ap_by_site.get(sid, 0.0) > 0 else 0.0
+            s_max = smax_by_site[sid] + ap_kva
+        else:
+            s_max = (p_mean / fc) / site_pf if p_mean > 0 else 0.0
         loss = transformer_site_energy_loss_kwh(plates, s_max, cap, fp, hours_period)
         energy_technical += loss
         ratio = s_max / cap if cap > 0 else 0.0

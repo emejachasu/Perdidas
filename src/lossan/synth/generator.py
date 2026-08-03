@@ -86,6 +86,7 @@ class SyntheticGenerator:
             "poles": poles,
             "sites": sites,
             "transformer_units": units,
+            "load_points": self._load_points(customers),
             "customers": customers,
             "streetlights": streetlights,
             "consumption": consumption,
@@ -304,6 +305,25 @@ class SyntheticGenerator:
                 "base_kwh": round(base * rng.uniform(0.7, 1.3), 1),
             })
         return pd.DataFrame(rows)
+
+    @staticmethod
+    def _load_points(customers: pd.DataFrame) -> pd.DataFrame:
+        """Deriva los PUNTOS DE CARGA (PuntoCarga de CNEL) de las conexiones.
+
+        Un punto de carga agrupa N conexiones consumidor que comparten poste,
+        transformador, fase y acometida (§5.3).
+        """
+        g = customers.groupby("site_id")
+        lp = g.agg(
+            feeder_id=("feeder_id", "first"),
+            transformer_site_id=("transformer_site_id", "first"),
+            pole_id=("pole_id", "first"),
+            phase=("phase", "first"),
+            n_connections=("customer_unit_id", "count"),
+        ).reset_index().rename(columns={"site_id": "load_point_id"})
+        # la acometida del punto dimensiona el conjunto, no cada medidor
+        lp["service_drop_kva"] = (g["service_drop_kva"].sum() * 0.8).round(2).to_numpy()
+        return lp
 
     def _streetlights(self, rng, fid, n_tx, sites, poles) -> pd.DataFrame:
         n = int(n_tx * rng.uniform(2, 5))

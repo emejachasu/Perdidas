@@ -35,6 +35,12 @@ label_mining:
 explain:
   top_n: 1000
 
+# Punto de carga (PuntoCarga de CNEL): coherencia de acometida y dispersión (§5.3)
+load_point:
+  drop_overload_ratio: 1.0        # S_max/capacidad de acometida por encima => sobrecargada
+  drop_underuse_ratio: 0.10       # muy por debajo => acometida sobredimensionada o consumo anómalo
+  intra_dispersion_min_ratio: 0.40  # conexión por debajo de este % de la mediana del punto
+
 # Monte Carlo de incertidumbre de pérdidas (§12): P10/P50/P90
 montecarlo:
   n_samples: 500

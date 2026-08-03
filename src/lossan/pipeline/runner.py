@@ -35,7 +35,7 @@ PLANNED_STAGES = {"state_estimation", "prioritization"}
 
 def _bronze_entities(lake: Lakehouse, fid: str) -> dict[str, pd.DataFrame]:
     entities = ["poles", "sites", "transformer_units", "customers",
-                "streetlights", "consumption", "header_meters",
+                "streetlights", "consumption", "header_meters", "load_points",
                 "segments", "switching_devices", "switching_events", "theft_labels"]
     return {e: lake.read_entity("bronze", e, fid) for e in entities}
 

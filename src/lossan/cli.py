@@ -211,6 +211,67 @@ def ingest_fgdb_cmd(
     typer.echo(json.dumps(counts, indent=2))
 
 
+@app.command("ingest-cnel")
+def ingest_cnel_cmd(
+    path: str = typer.Argument(..., help="Ruta a la .gdb con el modelo CNEL/SIGELEC."),
+    root: str = typer.Option(None, help="Raíz del lakehouse."),
+    mapping: str = typer.Option(None, help="YAML de mapeo (default: config/cnel_mapping.yaml)."),
+    extract_date: str = typer.Option(None, help="Fecha de extracción (YYYY-MM-DD)."),
+) -> None:
+    """Ingiere una FGDB con el modelo de datos de CNEL EP resolviendo la
+    jerarquía Estructura→Puesto→Unidad y PuntoCarga→ConexionConsumidor."""
+    from .io.cnel import ingest_cnel_fgdb, load_cnel_mapping
+
+    root = root or _default_root()
+    mp = load_cnel_mapping(mapping)
+    counts = ingest_cnel_fgdb(path, root, mp, extract_date=extract_date)
+    hier = counts.pop("_hierarchy", [])
+    typer.echo("Conteos ingeridos (§2.1):")
+    typer.echo(json.dumps(counts, indent=2))
+    if hier:
+        typer.echo("\nJerarquía puesto/unidad detectada:")
+        for r in hier:
+            typer.echo(f"  {r['relacion']}: {r['padres']} padres, {r['hijos']} hijos "
+                       f"(máx {r['hijos_por_padre_max']}/padre, "
+                       f"{r['padres_multi']} con más de uno)")
+
+
+@app.command("cnel-domains")
+def cnel_domains_cmd(
+    path: str = typer.Argument(..., help="Ruta a la .gdb"),
+    domain: str = typer.Option(None, help="Filtrar por nombre de dominio."),
+) -> None:
+    """Lista los dominios reales de la GDB para verificar el mapeo de fases y
+    configuración de banco de `config/cnel_mapping.yaml`."""
+    try:
+        from osgeo import ogr
+    except Exception:
+        typer.echo("Requiere GDAL/osgeo. Alternativa: revisar los dominios en ArcGIS Pro.")
+        raise typer.Exit(1)
+    ds = ogr.Open(path)
+    if ds is None:
+        typer.echo(f"No se pudo abrir {path}")
+        raise typer.Exit(1)
+    import xml.etree.ElementTree as ET
+    md = ds.GetMetadata("xml:FileGDB") or []
+    if not md:
+        typer.echo("La GDB no expone dominios por esta vía; usar ArcGIS Pro.")
+        raise typer.Exit(1)
+    root_el = ET.fromstring(md[0])
+    for dom in root_el.iter():
+        name_el = dom.find("DomainName")
+        if name_el is None:
+            continue
+        name = name_el.text or ""
+        if domain and domain.lower() not in name.lower():
+            continue
+        typer.echo(f"\n=== {name} ===")
+        for cv in dom.iter("CodedValue"):
+            code = cv.findtext("Code", "")
+            nm = cv.findtext("Name", "")
+            typer.echo(f"  {code} = {nm}")
+
+
 @app.command("ingest-consumption")
 def ingest_consumption_cmd(
     path: str = typer.Argument(..., help="CSV/Parquet/Excel de consumo histórico."),

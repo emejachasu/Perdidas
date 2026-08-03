@@ -64,17 +64,43 @@ class TransformerUnitModel(Base):
     plate_source: str = "catalog"   # 'plate' | 'catalog' (marcado del origen)
 
 
+class LoadPoint(Base):
+    """Punto de carga — el "puesto de cliente" del modelo CNEL (`PuntoCarga`).
+
+    Es la **acometida física**: un edificio o predio tiene UN punto de carga y
+    puede colgar de él VARIAS conexiones consumidor (medidores). El balance con
+    sentido físico y el costo de una visita son a este nivel (§5.3, §17.1).
+    """
+
+    load_point_id: str
+    transformer_site_id: str | None = None   # puesto de transformación que lo alimenta
+    pole_id: str | None = None               # estructura de soporte
+    phase: Phase | None = None
+    service_drop_kva: float | None = None    # capacidad de la acometida compartida
+    reading_route: str | None = None
+    reading_sequence: str | None = None
+    x: float | None = None
+    y: float | None = None
+
+
 class Customer(Base):
-    """Unidad de servicio (medidor). Varias pueden compartir un puesto (§5.3)."""
+    """Unidad de servicio = medidor (`CONEXIONCONSUMIDOR` en CNEL).
+
+    Varias comparten un mismo punto de carga (§5.3): en un edificio hay 1 punto
+    de carga y N conexiones consumidor. ``site_id`` apunta a ese punto de carga.
+    """
 
     customer_unit_id: str
-    site_id: str          # puesto de cliente
+    site_id: str          # punto de carga (PuntoCarga) al que pertenece
     pole_id: str | None = None
     tariff_class: TariffClass
     phase: Phase | None = None
     installed_load_kw: float | None = None
     service_drop_kva: float | None = None
-    transformer_site_id: str | None = None   # por traza
+    transformer_site_id: str | None = None   # por traza (heredado del punto de carga)
+    customer_code: str | None = None         # código comercial (cruce con consumo)
+    meter_serial: str | None = None
+    meter_type: str | None = None
 
 
 class ConsumptionRecord(BaseModel):
@@ -179,6 +205,7 @@ CANONICAL_MODELS = {
     "poles": Pole,
     "sites": Site,
     "transformer_units": TransformerUnitModel,
+    "load_points": LoadPoint,
     "customers": Customer,
     "consumption": ConsumptionRecord,
     "segments": Segment,

@@ -37,6 +37,18 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
     gold.update(bal)
     stages |= {"electrical", "balance"}
 
+    # --- §5.3: agregación por PUNTO DE CARGA (PuntoCarga → conexiones) ---
+    try:
+        from .loadpoint import aggregate_load_points, load_point_findings
+        lp = aggregate_load_points(tables.get("consumption"), tables.get("customers"), cfg)
+        if lp is not None and not lp.empty:
+            gold["load_point_balance"] = lp
+            lpf = load_point_findings(lp, cfg)
+            if not lpf.empty:
+                gold["load_point_findings"] = lpf
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"[{fid}] agregación por punto de carga falló: {e}")
+
     # --- §14.2: desbalance por puesto (mapeo cliente→fase) ---
     try:
         from .imbalance import compute_site_imbalance

@@ -157,23 +157,38 @@ def m7_peer_divergence(ids, kwh, customers) -> pd.DataFrame:
     })
 
 
-def m8_intra_site_dispersion(ids, kwh, customers) -> pd.DataFrame:
-    """Dispersión intra-puesto de cliente (§5.3): unidades muy por debajo de
-    sus pares del mismo puesto de cliente con acometida equivalente."""
+def m8_intra_site_dispersion(ids, kwh, customers, min_ratio: float = 0.4) -> pd.DataFrame:
+    """Dispersión intra-punto de carga (§5.3).
+
+    En CNEL un ``PuntoCarga`` (edificio) agrupa N ``CONEXIONCONSUMIDOR``. Que
+    unas conexiones consuman con normalidad y otras muy por debajo, **con la
+    misma acometida**, es indicador fuerte de derivación en el tablero o riser
+    común. Se compara sólo entre conexiones del MISMO punto de carga y, cuando
+    el dato existe, con capacidad de acometida equivalente.
+    """
     if "site_id" not in customers.columns:
         return pd.DataFrame(columns=["customer_unit_id", "label_source",
                                      "confidence_weight", "evidence"])
     df = pd.DataFrame({"customer_unit_id": ids, "mean_kwh": kwh.mean(axis=1)})
-    df = df.merge(customers[["customer_unit_id", "site_id"]], on="customer_unit_id", how="left")
+    cols = ["customer_unit_id", "site_id"]
+    if "service_drop_kva" in customers.columns:
+        cols.append("service_drop_kva")
+    df = df.merge(customers[cols], on="customer_unit_id", how="left")
     grp = df.groupby("site_id")["mean_kwh"]
     df["site_med"] = grp.transform("median")
     df["site_n"] = grp.transform("count")
-    flagged = df[(df["site_n"] >= 2) & (df["mean_kwh"] < 0.4 * df["site_med"]) &
-                 (df["mean_kwh"] > 0)]
+    mask = ((df["site_n"] >= 2) & (df["mean_kwh"] < min_ratio * df["site_med"]) &
+            (df["mean_kwh"] > 0))
+    flagged = df[mask]
+    if flagged.empty:
+        return pd.DataFrame(columns=["customer_unit_id", "label_source",
+                                     "confidence_weight", "evidence"])
+    ev = [f"{r.mean_kwh / r.site_med:.0%} de la mediana de su punto de carga "
+          f"({int(r.site_n)} conexiones)" for r in flagged.itertuples()]
     return pd.DataFrame({
         "customer_unit_id": flagged["customer_unit_id"].to_numpy(),
         "label_source": "M8_intra_site_dispersion", "confidence_weight": 0.6,
-        "evidence": "muy por debajo de sus pares del mismo puesto",
+        "evidence": ev,
     })
 
 

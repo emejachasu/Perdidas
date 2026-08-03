@@ -73,7 +73,9 @@ Cambia la escala en `config/scale.yaml` (`active_profile: demo | full`), o
 ```bash
 lossan schema template --out mi_modelo.yaml # PLANTILLA para modelar tu SIG (campos+tipos)
 lossan fgdb-layers  ruta/a/red.gdb          # inspeccionar capas de una FGDB
-lossan ingest-fgdb  ruta/a/red.gdb          # ingerir red a BRONZE (mapeo en config/schema_mapping.yaml)
+lossan ingest-cnel  ruta/a/SIGELEC.gdb      # ingerir modelo CNEL (puesto/unidad, punto de carga)
+lossan cnel-domains ruta/a/SIGELEC.gdb      # verificar dominios (fases, config de banco)
+lossan ingest-fgdb  ruta/a/red.gdb          # ingerir red genérica (mapeo en config/schema_mapping.yaml)
 lossan ingest-consumption consumo.csv       # consumo histórico del sistema comercial
 lossan ingest-header cabecera.csv           # medidor de cabecera por alimentador/mes
 lossan feeder-report F0000                  # elementos conectados por traza + desglose de pérdidas
@@ -95,6 +97,7 @@ Lectura/escritura de FGDB con GDAL/OpenFileGDB (**sin `arcpy`**, §2.5).
 **[Revisión de correctitud](docs/REVISION.md)**
 
 **Guías:**
+**[Modelo de datos CNEL EP](docs/MODELO_CNEL.md)** ·
 **[Datos requeridos (inventario)](docs/DATOS_REQUERIDOS.md)** ·
 **[Modelo de datos y conectividad](docs/DATA_MODEL.md)** ·
 **[Histórico necesario](docs/HISTORIA.md)** ·
