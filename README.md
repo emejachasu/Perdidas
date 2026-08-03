@@ -67,14 +67,20 @@ Cambia la escala en `config/scale.yaml` (`active_profile: demo | full`), o
 ### Entrada/salida GIS (File Geodatabase)
 
 ```bash
+lossan schema template --out mi_modelo.yaml # PLANTILLA para modelar tu SIG (campos+tipos)
 lossan fgdb-layers  ruta/a/red.gdb          # inspeccionar capas de una FGDB
-lossan ingest-fgdb  ruta/a/red.gdb          # ingerir a BRONZE (mapeo en config/schema_mapping.yaml)
+lossan ingest-fgdb  ruta/a/red.gdb          # ingerir red a BRONZE (mapeo en config/schema_mapping.yaml)
+lossan ingest-consumption consumo.csv       # consumo histórico del sistema comercial
+lossan ingest-header cabecera.csv           # medidor de cabecera por alimentador/mes
+lossan feeder-report F0000                  # elementos conectados por traza + desglose de pérdidas
 lossan export-sample --fmt fgdb             # datos de prueba (CSV + GPKG + FileGDB)
 lossan export-results --fmt fgdb            # capas de resultados para ArcGIS (§18)
 ```
 
 Lectura/escritura de FGDB con GDAL/OpenFileGDB (**sin `arcpy`**, §2.5). Guías:
-**[Windows paso a paso](docs/WINDOWS.md)** · **[Calibración del modelo](docs/TUNING.md)**.
+**[Modelo de datos y conectividad](docs/DATA_MODEL.md)** ·
+**[Histórico necesario](docs/HISTORIA.md)** ·
+**[Windows paso a paso](docs/WINDOWS.md)** · **[Calibración](docs/TUNING.md)**.
 
 ## Pruebas
 

@@ -81,6 +81,40 @@ def schema_inspect() -> None:
             typer.echo(f"  - {field}: {typ} [{req}]")
 
 
+@schema_app.command("template")
+def schema_template(
+    out: str = typer.Option("config/schema_mapping.generated.yaml", help="Ruta de salida."),
+) -> None:
+    """Genera un archivo editable para MODELAR el mapeo de tu SIG al modelo
+    canónico (cada campo canónico -> campo de tu FGDB, con tipo y obligatoriedad)."""
+    from .domain.models import CANONICAL_MODELS
+
+    lines = [
+        "# Plantilla de modelado de datos de entrada del SIG.",
+        "# Rellena 'layer' con tu feature class y cada '<canónico>: <TU_CAMPO>'.",
+        "# Comentarios [req]/[opc] y (tipo) indican obligatoriedad y tipo esperado.",
+        "feeder_field: FEEDER_ID   # campo global con el id de alimentador",
+        "layers:",
+    ]
+    spatial = {"poles", "sites", "segments", "customers", "streetlights", "switching_devices"}
+    for name, model in CANONICAL_MODELS.items():
+        if name not in spatial:
+            continue
+        lines.append(f"  {name}:")
+        lines.append(f"    layer: \"\"            # <-- feature class de tu FGDB para '{name}'")
+        lines.append("    fields:")
+        for field, info in model.model_fields.items():
+            if field in ("feeder_id_declared", "feeder_id_traced", "run_id",
+                         "quality_flags", "created_date"):
+                continue
+            typ = getattr(info.annotation, "__name__", str(info.annotation))
+            req = "req" if info.is_required() else "opc"
+            lines.append(f"      {field}: \"\"        # [{req}] ({typ})")
+    Path(out).parent.mkdir(parents=True, exist_ok=True)
+    Path(out).write_text("\n".join(lines) + "\n", encoding="utf-8")
+    typer.echo(f"Plantilla de modelado escrita en: {out}")
+
+
 @app.command("export-sample")
 def export_sample_cmd(
     root: str = typer.Option(None, help="Raíz del lakehouse."),
@@ -139,6 +173,73 @@ def ingest_fgdb_cmd(
     counts = ingest_fgdb(path, root, mp, extract_date=extract_date)
     typer.echo("Conteos reales ingeridos (§2.1):")
     typer.echo(json.dumps(counts, indent=2))
+
+
+@app.command("ingest-consumption")
+def ingest_consumption_cmd(
+    path: str = typer.Argument(..., help="CSV/Parquet/Excel de consumo histórico."),
+    root: str = typer.Option(None, help="Raíz del lakehouse."),
+    map_: str = typer.Option(None, "--map", help="Renombres canónico=fuente separados por coma."),
+) -> None:
+    """Ingiere el consumo histórico del sistema comercial a BRONZE."""
+    from .io import ingest_consumption
+
+    root = root or _default_root()
+    fmap = dict(kv.split("=", 1) for kv in map_.split(",")) if map_ else None
+    typer.echo(json.dumps(ingest_consumption(path, root, fmap), indent=2))
+
+
+@app.command("ingest-header")
+def ingest_header_cmd(
+    path: str = typer.Argument(..., help="CSV/Parquet de cabecera (feeder_id, year_month, kwh)."),
+    root: str = typer.Option(None, help="Raíz del lakehouse."),
+    map_: str = typer.Option(None, "--map", help="Renombres canónico=fuente separados por coma."),
+) -> None:
+    """Ingiere el medidor de cabecera por alimentador y mes a BRONZE."""
+    from .io import ingest_header
+
+    root = root or _default_root()
+    fmap = dict(kv.split("=", 1) for kv in map_.split(",")) if map_ else None
+    typer.echo(json.dumps(ingest_header(path, root, fmap), indent=2))
+
+
+@app.command("feeder-report")
+def feeder_report(
+    feeder: str = typer.Argument(..., help="Id de alimentador (ej. F0000)."),
+    root: str = typer.Option(None, help="Raíz del lakehouse."),
+) -> None:
+    """Analiza los elementos conectados por traza y el desglose de pérdidas."""
+    from .lakehouse import Lakehouse
+    from .topology import FeederGraph
+
+    root = root or _default_root()
+    lake = Lakehouse(root)
+    segs = lake.read_entity("bronze", "segments", feeder)
+    sites = lake.read_entity("bronze", "sites", feeder)
+    if segs.empty:
+        typer.echo("Sin topología para ese alimentador. ¿Generaste/ingeriste la red?")
+        raise typer.Exit(1)
+    fg = FeederGraph.build(feeder, segs, sites)
+    down = fg.subtree_load(fg.source)
+    typer.echo(f"=== Elementos conectados a {feeder} (por traza desde la fuente) ===")
+    typer.echo(f"  nodos={fg.n_nodes}  tramos={fg.n_edges}")
+    typer.echo(f"  clientes aguas abajo={down['n_customers']}  puestos={len(sites)}")
+    val = fg.validate()
+    typer.echo(f"  validación topológica: {'OK' if not val else val}")
+
+    bal = lake.read_entity("gold", "feeder_balance", feeder)
+    if not bal.empty:
+        b = bal.iloc[0]
+        typer.echo("\n=== Desglose de pérdidas (GOLD) ===")
+        typer.echo(f"  Energía cabecera : {b['energy_header_kwh']:.0f} kWh")
+        typer.echo(f"  − Facturada      : {b['energy_billed_kwh']:.0f} kWh")
+        typer.echo(f"  − Alumbrado púb. : {b['energy_streetlight_kwh']:.0f} kWh")
+        typer.echo(f"  − Técnicas       : {b['energy_technical_kwh']:.0f} kWh "
+                   f"({b['technical_pct']:.2f}%)")
+        typer.echo(f"  = PNT            : {b['pnt_kwh']:.0f} kWh ({b['pnt_pct']:.2f}%)")
+        typer.echo(f"  Residuo balance  : {b['residual_pct']:.3f}%")
+    else:
+        typer.echo("\n(Ejecuta 'lossan run' para el desglose de pérdidas.)")
 
 
 @app.command()
