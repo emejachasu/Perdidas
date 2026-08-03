@@ -23,11 +23,16 @@ class FeederGraph:
     idx: dict[str, int]                       # node name -> index
     name: dict[int, str] = field(default_factory=dict)
     parent: dict[str, str] = field(default_factory=dict)   # node -> upstream node
+    # Conjuntos explícitos de hojas (no se infieren del nombre del nodo).
+    customer_nodes: set[str] = field(default_factory=set)
+    streetlight_nodes: set[str] = field(default_factory=set)
 
     # ---------------- construcción ----------------
     @classmethod
     def build(cls, feeder_id: str, segments: pd.DataFrame,
-              sites: pd.DataFrame | None = None) -> "FeederGraph":
+              sites: pd.DataFrame | None = None,
+              customers: pd.DataFrame | None = None,
+              streetlights: pd.DataFrame | None = None) -> "FeederGraph":
         g = rx.PyDiGraph(check_cycle=False)
         idx: dict[str, int] = {}
         name: dict[int, str] = {}
@@ -69,7 +74,9 @@ class FeederGraph:
                         "is_transformer": True,
                     })
                     parent[sec] = nid
-        return cls(feeder_id, source, g, idx, name, parent)
+        fg = cls(feeder_id, source, g, idx, name, parent)
+        fg.register_leaf_nodes(customers, streetlights)
+        return fg
 
     # ---------------- trazas ----------------
     def trace_downstream(self, node: str) -> list[str]:
@@ -105,16 +112,58 @@ class FeederGraph:
                 "impedance_ohm": z, "reaches_source": path[0] == self.source}
 
     def subtree_load(self, node: str, load_map: dict[str, float] | None = None,
-                     leaf_prefixes: tuple[str, ...] = ("-C", "-L")) -> dict:
-        """Carga acumulada aguas abajo: nº clientes/luminarias y kVA (§6)."""
+                     customer_nodes: set[str] | None = None,
+                     streetlight_nodes: set[str] | None = None) -> dict:
+        """Carga acumulada aguas abajo: nº clientes/luminarias y kVA (§6).
+
+        Los clientes y luminarias se identifican por **conjuntos explícitos** de
+        ids (``customer_nodes`` / ``streetlight_nodes``), no por convención de
+        nombres: con los ids reales del SIG cualquier heurística de substring
+        produce falsos positivos y negativos. Si no se pasan, se usan los
+        registrados con :meth:`register_leaf_nodes`.
+        """
         downstream = self.trace_downstream(node)
-        customers = [n for n in downstream if "-C" in n]
-        lights = [n for n in downstream if "-L" in n]
+        cust = customer_nodes if customer_nodes is not None else self.customer_nodes
+        lights = streetlight_nodes if streetlight_nodes is not None else self.streetlight_nodes
         kva = 0.0
         if load_map:
             kva = sum(load_map.get(n, 0.0) for n in downstream)
-        return {"n_customers": len(customers), "n_streetlights": len(lights),
+        n_cust = sum(1 for n in downstream if n in cust) if cust else 0
+        n_light = sum(1 for n in downstream if n in lights) if lights else 0
+        return {"n_customers": n_cust, "n_streetlights": n_light,
                 "load_kva": round(kva, 3), "n_nodes": len(downstream)}
+
+    def register_leaf_nodes(self, customers: "pd.DataFrame | None" = None,
+                            streetlights: "pd.DataFrame | None" = None) -> None:
+        """Registra qué nodos son clientes y cuáles luminarias (§6).
+
+        Debe llamarse tras construir el grafo para que ``subtree_load`` cuente
+        correctamente con los identificadores reales del SIG.
+        """
+        if customers is not None and not customers.empty:
+            self.customer_nodes = set(customers["customer_unit_id"].astype(str))
+        if streetlights is not None and not streetlights.empty:
+            col = ("streetlight_id" if "streetlight_id" in streetlights.columns
+                   else streetlights.columns[0])
+            self.streetlight_nodes = set(streetlights[col].astype(str))
+
+    def accumulate_downstream(self, load_map: dict[str, float]) -> dict[str, float]:
+        """Carga acumulada aguas abajo de CADA nodo en una sola pasada.
+
+        Equivale a llamar ``subtree_load`` en todos los nodos, pero en O(V+E) en
+        vez de O(V·(V+E)): recorre el árbol en post-orden sumando hacia arriba.
+        """
+        acc = {n: float(load_map.get(n, 0.0)) for n in self.idx}
+        try:
+            order = rx.topological_sort(self.g)
+        except rx.DAGHasCycle:
+            return acc
+        for i in reversed(list(order)):
+            node = self.name[i]
+            parent = self.parent.get(node)
+            if parent is not None:
+                acc[parent] = acc.get(parent, 0.0) + acc[node]
+        return acc
 
     def branch_decomposition(self) -> list[dict]:
         """Descompone el árbol en ramas entre nodos de bifurcación (§6)."""

@@ -27,11 +27,13 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
     cfg = cfg or load_config()
     heavy = level != "n1"
     fid = tables["header_meters"]["feeder_id"].iloc[0]
+    hours_month = float(cfg.electrical["hours_per_month"])
     gold: dict[str, pd.DataFrame] = {}
     stages: set[str] = {"ingest"}
 
     # --- F3/F5: balance, cargabilidad, PNT ---
-    bal = analyze_feeder(tables, cfg)
+    # En modo 'full' el modelo ML (F7) reemplaza el proxy de riesgo: no lo calculamos.
+    bal = analyze_feeder(tables, cfg, with_risk_proxy=not heavy)
     gold.update(bal)
     stages |= {"electrical", "balance"}
 
@@ -40,7 +42,7 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
         from .imbalance import compute_site_imbalance
         n_months = tables["header_meters"].shape[0]
         imb = compute_site_imbalance(tables.get("customers"), tables.get("consumption"),
-                                     tables.get("sites"), cfg, hours_period=730.0 * n_months)
+                                     tables.get("sites"), cfg, hours_period=hours_month * n_months)
         if imb is not None and not imb.empty:
             gold["transformer_imbalance"] = imb
     except Exception as e:  # pragma: no cover
@@ -70,7 +72,7 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
     consumption = tables.get("consumption")
     header = tables["header_meters"]
     n_months = header.shape[0]
-    hours_period = 730.0 * n_months
+    hours_period = hours_month * n_months
 
     # mapa de carga por nodo primario (kW medio) del puesto
     load_map = {}
@@ -93,7 +95,8 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
         try:
             from ..topology import (FeederGraph, build_protection_zones,
                                     run_quality_rules)
-            fg = FeederGraph.build(fid, segments, sites)
+            fg = FeederGraph.build(fid, segments, sites, customers,
+                                   tables.get('streetlights'))
             topo_findings = fg.validate()
             zones, node_to_zone = build_protection_zones(
                 fg, tables.get("switching_devices"), sites, customers)
@@ -112,8 +115,10 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
             }])
             # §8.3: índice de confiabilidad del modelo 0-100
             from .reliability import reliability_table
-            resid = float(gold["feeder_balance"].iloc[0]["residual_pct"])
-            gold["reliability_index"] = reliability_table(fid, q, fg.n_edges, resid)
+            b0 = gold["feeder_balance"].iloc[0]
+            # penaliza por incoherencias del balance (antes usaba una métrica nula)
+            incoherence = 0.0 if b0["balance_coherent"] else 1.0
+            gold["reliability_index"] = reliability_table(fid, q, fg.n_edges, incoherence)
             stages.add("topology")
         except Exception as e:  # pragma: no cover
             logger.warning(f"[{fid}] topología falló: {e}")
@@ -145,8 +150,8 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
             monthly = (merged.groupby(["transformer_site_id", "year_month"])["kwh"]
                        .sum().reset_index())
             stats = monthly.groupby("transformer_site_id")["kwh"].agg(["mean", "std"]).fillna(0.0)
-            stats["mean_kw"] = stats["mean"] / 730.0
-            stats["std_kw"] = stats["std"] / 730.0
+            stats["mean_kw"] = stats["mean"] / hours_month
+            stats["std_kw"] = stats["std"] / hours_month
             stats = stats.reset_index().rename(columns={"transformer_site_id": "site_id"})
             bal = gold["feeder_balance"].iloc[0]
             measured_total_kw = max(
@@ -161,6 +166,21 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
             zone_se["chi2"] = round(res.chi2, 2)
             gold["zone_state_estimation"] = zone_se
             stages.add("state_estimation")
+
+            # Verificación independiente del balance (§22.3): la carga no
+            # contabilizada que estima el WLS (ponderando por incertidumbre) debe
+            # coincidir con la PNT contable una vez descontados AP y ENS. Es un
+            # camino distinto al de la resta, por lo que su discrepancia SÍ mide
+            # consistencia (a diferencia de recomputar la propia identidad).
+            unaccounted_kwh = float(zone_se["unaccounted_load_kw"].sum()) * hours_period
+            pnt_independent = unaccounted_kwh - float(bal["energy_streetlight_kwh"]) \
+                - float(bal["energy_ens_kwh"])
+            hdr = float(bal["energy_header_kwh"])
+            disc = abs(pnt_independent - float(bal["pnt_kwh"])) / hdr * 100.0 if hdr else None
+            b = gold["feeder_balance"].copy()
+            b.loc[b.index[0], "pnt_independent_kwh"] = round(pnt_independent, 1)
+            b.loc[b.index[0], "unexplained_pct"] = round(disc, 4) if disc is not None else None
+            gold["feeder_balance"] = b
         except Exception as e:  # pragma: no cover
             logger.warning(f"[{fid}] estimación de estado falló: {e}")
 

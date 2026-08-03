@@ -12,7 +12,7 @@ _SEV_WEIGHT = {"critica": 5.0, "alta": 2.0, "media": 1.0}
 
 
 def reliability_index(quality_df: pd.DataFrame, n_elements: int,
-                      residual_pct: float) -> dict:
+                      incoherence: float) -> dict:
     """Devuelve el índice 0-100 y sus componentes para un alimentador/zona."""
     n_elements = max(1, int(n_elements))
     penalty_pts = 0.0
@@ -21,7 +21,8 @@ def reliability_index(quality_df: pd.DataFrame, n_elements: int,
             penalty_pts += w * int((quality_df["severity"] == sev).sum())
     density = penalty_pts / n_elements
     quality_penalty = 80.0 * min(1.0, density)              # hasta 80 pts por calidad
-    balance_penalty = min(20.0, abs(residual_pct) * 4.0)    # hasta 20 pts por residuo
+    # 'incoherence' en [0,1]: 0 = balance coherente, 1 = falló alguna verificación
+    balance_penalty = min(20.0, abs(incoherence) * 20.0)
     score = max(0.0, 100.0 - quality_penalty - balance_penalty)
     return {"reliability_index": round(score, 1),
             "quality_penalty": round(quality_penalty, 1),
@@ -30,8 +31,8 @@ def reliability_index(quality_df: pd.DataFrame, n_elements: int,
 
 
 def reliability_table(feeder_id: str, quality_df: pd.DataFrame, n_elements: int,
-                      residual_pct: float) -> pd.DataFrame:
+                      incoherence: float) -> pd.DataFrame:
     """Fila GOLD con el índice de confiabilidad de un alimentador."""
-    d = reliability_index(quality_df, n_elements, residual_pct)
+    d = reliability_index(quality_df, n_elements, incoherence)
     d["feeder_id"] = feeder_id
     return pd.DataFrame([d])

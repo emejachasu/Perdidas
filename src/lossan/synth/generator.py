@@ -269,18 +269,35 @@ class SyntheticGenerator:
         cprobs = np.array(cprobs)
         klass = rng.choice(len(TARIFF_CHOICES), size=n, p=cprobs)
         # puestos de cliente: algunos multi-unidad (§5.3)
+        # Puestos de cliente MULTI-UNIDAD (§5.3): una fracción de los puestos
+        # agrupa varias unidades de servicio (edificios, locales sobre una misma
+        # acometida). Es lo que ejercita el mecanismo M8 y la asimetría de costo
+        # por visita de §17.1; con 1 unidad por puesto nunca se activarían.
+        site_of_customer, cs_idx, i = [], 0, 0
+        while len(site_of_customer) < n:
+            group = int(rng.choice([1, 1, 1, 2, 3, 6], p=[.55, .15, .10, .10, .06, .04]))
+            for _ in range(min(group, n - len(site_of_customer))):
+                site_of_customer.append(f"{fid}-CS{cs_idx:06d}")
+            cs_idx += 1
+
+        # Las unidades de un mismo puesto comparten acometida: mismo poste, mismo
+        # transformador y misma fase (§5.3).
+        site_attrs: dict[str, tuple] = {}
         rows = []
         for i in range(n):
             name, _, base = TARIFF_CHOICES[klass[i]]
-            tx = rng.choice(tx_ids)
+            cs = site_of_customer[i]
+            if cs not in site_attrs:
+                site_attrs[cs] = (rng.choice(tx_ids), rng.choice(pole_ids),
+                                  str(rng.choice(["A", "B", "C"])))
+            tx, pole, phase = site_attrs[cs]
             rows.append({
                 "customer_unit_id": f"{fid}-C{i:06d}",
-                "site_id": f"{fid}-CS{i // 1:06d}",   # puesto de cliente 1:1 por defecto
+                "site_id": cs,
                 "feeder_id": fid,
-                "pole_id": rng.choice(pole_ids),
+                "pole_id": pole,
                 "tariff_class": name,
-                "phase": str(rng.choice(["A", "B", "C"])),   # acometida monofásica
-
+                "phase": phase,   # acometida monofásica compartida en el puesto
                 "installed_load_kw": round(base / 30.0 / 24.0 * rng.uniform(3, 6), 3),
                 "service_drop_kva": round(base / 200.0 * rng.uniform(1.0, 1.5), 2),
                 "transformer_site_id": tx,

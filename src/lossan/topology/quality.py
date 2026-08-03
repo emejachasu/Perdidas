@@ -121,12 +121,17 @@ def run_quality_rules(
                  suggested=feeder_id)
 
     # ---- R09 ampacidad insuficiente ----
+    # Acumulación aguas abajo en UNA pasada (O(V+E)) en vez de una traza por tramo.
+    # load_map viene en kW; se convierte a kVA con el fp representativo.
     if load_map:
+        site_pf = float(cfg.electrical.get("default_site_pf", 0.92))
+        acc = fg.accumulate_downstream(load_map)
         for r in segments.itertuples():
-            load = fg.subtree_load(r.node_to, load_map)["load_kva"] if r.node_to in fg.idx else 0.0
-            if load > 0 and r.voltage_ll:
-                i = load * 1000.0 / (SQRT3 * r.voltage_ll) if str(r.phase) == "ABC" \
-                    else load * 1000.0 / r.voltage_ll
+            load_kw = acc.get(r.node_to, 0.0)
+            if load_kw > 0 and r.voltage_ll:
+                load_kva = load_kw / site_pf
+                i = load_kva * 1000.0 / (SQRT3 * r.voltage_ll) if str(r.phase) == "ABC" \
+                    else load_kva * 1000.0 / r.voltage_ll
                 if i > r.ampacity_a:
                     emit("R09", r.segment_id,
                          f"Corriente {i:.0f} A > ampacidad {r.ampacity_a} A", confidence=0.8)

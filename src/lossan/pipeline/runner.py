@@ -74,7 +74,9 @@ def _process_one(root: str, fid: str, force: bool, level: str = "full") -> dict:
         "stages_done": len(stages_done),
         "progress_pct": round(100.0 * len(stages_done) / len(PIPELINE_STAGES), 1),
         "stages_done_list": ",".join(sorted(stages_done)),
-        "balance_closed": bool(abs(bal["residual_pct"]) < 0.5 and not bal["pnt_negative_alert"]),
+        # Cierre real: verificaciones de coherencia física (no la identidad contable).
+        "balance_closed": bool(bal["balance_coherent"] and not bal["pnt_negative_alert"]),
+        "failed_checks": str(bal.get("failed_checks", "")),
         "pnt_pct": float(bal["pnt_pct"]),
         "technical_pct": float(bal["technical_pct"]),
         "n_customers": int(bal["n_customers"]),

@@ -28,7 +28,7 @@ def reconcile_feeder(consumption: pd.DataFrame, customers: pd.DataFrame,
     coin = cfg.electrical["coincidence"]
     pf_by_class = cfg.electrical["power_factor_by_class"]
     v_ll = float(cfg.electrical["voltage"]["ll_mv"])
-    hours_month = 730.0
+    hours_month = float(cfg.electrical["hours_per_month"])
 
     # energía mensual media por cliente y su clase
     e_month = consumption.groupby("customer_unit_id")["kwh"].mean()

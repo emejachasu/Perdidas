@@ -70,8 +70,11 @@ def test_pnt_tracks_injected_theft(micro_config, tmp_path):
 
     injected = labels.groupby("feeder_id")["stolen_kwh"].sum()
     est = balance.set_index("feeder_id")["pnt_kwh"]
-    # residuo del balance por alimentador debe ser pequeño
-    assert (balance["residual_pct"].abs() < 0.5).all()
+    # el balance debe pasar las verificaciones de coherencia física (§22.3).
+    # NOTA: esto NO es la identidad contable (que sería 0 por construcción),
+    # sino chequeos independientes: PNT>=0, términos <= cabecera, rangos plausibles.
+    assert balance["balance_coherent"].all(), \
+        f"checks fallidos: {balance['failed_checks'].tolist()}"
     # PNT estimada del mismo orden de magnitud que lo robado (± tolerancia amplia)
     for fid, inj in injected.items():
         if inj > 0:

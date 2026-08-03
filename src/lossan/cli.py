@@ -294,6 +294,8 @@ def feeder_report(
     root: str = typer.Option(None, help="Raíz del lakehouse."),
 ) -> None:
     """Analiza los elementos conectados por traza y el desglose de pérdidas."""
+    import pandas as pd
+
     from .lakehouse import Lakehouse
     from .topology import FeederGraph
 
@@ -304,7 +306,9 @@ def feeder_report(
     if segs.empty:
         typer.echo("Sin topología para ese alimentador. ¿Generaste/ingeriste la red?")
         raise typer.Exit(1)
-    fg = FeederGraph.build(feeder, segs, sites)
+    cust = lake.read_entity("bronze", "customers", feeder)
+    sl = lake.read_entity("bronze", "streetlights", feeder)
+    fg = FeederGraph.build(feeder, segs, sites, cust, sl)
     down = fg.subtree_load(fg.source)
     typer.echo(f"=== Elementos conectados a {feeder} (por traza desde la fuente) ===")
     typer.echo(f"  nodos={fg.n_nodes}  tramos={fg.n_edges}")
@@ -322,7 +326,12 @@ def feeder_report(
         typer.echo(f"  − Técnicas       : {b['energy_technical_kwh']:.0f} kWh "
                    f"({b['technical_pct']:.2f}%)")
         typer.echo(f"  = PNT            : {b['pnt_kwh']:.0f} kWh ({b['pnt_pct']:.2f}%)")
-        typer.echo(f"  Residuo balance  : {b['residual_pct']:.3f}%")
+        coherent = bool(b.get("balance_coherent", False))
+        typer.echo(f"  Cierre coherente : {'sí' if coherent else 'NO'}"
+                   + ("" if coherent else f"  [{b.get('failed_checks', '')}]"))
+        unexp = b.get("unexplained_pct")
+        if unexp is not None and pd.notna(unexp):
+            typer.echo(f"  No explicado vs. estimación independiente (DSSE): {unexp:.3f}%")
     else:
         typer.echo("\n(Ejecuta 'lossan run' para el desglose de pérdidas.)")
 

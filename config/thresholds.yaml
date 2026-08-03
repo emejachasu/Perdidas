@@ -17,6 +17,12 @@ bank:
 balance:
   residual_tolerance_pct: 0.5   # criterio de aceptación §22.3
   pnt_negative_alert: true      # §13 PNT<0 es error inequívoco
+  # Rangos de plausibilidad para el CIERRE del balance. La PNT se define por
+  # diferencia (identidad contable), por lo que el "cierre" debe verificarse con
+  # coherencia física independiente, no con la identidad misma.
+  total_losses_max_pct: 40.0    # pérdidas totales por encima de esto = implausible
+  technical_max_pct: 15.0       # pérdidas técnicas por encima de esto = implausible
+  technical_min_pct: 1.0        # por debajo de esto = modelo técnico subestimado
 
 # Umbrales de mecanismos de minería de etiquetas (§15.2) — placeholders calibrables (F7)
 label_mining:

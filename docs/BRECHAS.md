@@ -81,7 +81,7 @@ El objetivo del proyecto (separar pérdidas técnicas de PNT, priorizar campo) e
 |---|---|---|
 | 1 | Procesa el universo dentro de §2.3 | ✅ N1 extrapola a 960 < 8 h; falta corrida real 960 |
 | 2 | Reproduce IEEE 13/34/123 | 🟨 IEEE-13 (líneas) validado vs OpenDSS; faltan reguladores/transformadores del caso completo |
-| 3 | Balance cierra con residuo < 0,5 % | ✅ (12/12) |
+| 3 | Balance cierra | ✅ verificado por **coherencia física** (PNT≥0, términos≤cabecera, rangos plausibles) + discrepancia 0,1–0,15 % contra la estimación independiente del DSSE. **Corregido en la revisión**: la métrica anterior era una identidad algebraica (≡0) que no validaba nada — ver [REVISION.md](REVISION.md) |
 | 4 | Fórmulas §9.2 con test de caso manual | ✅ |
 | 5 | Capacidad/pérdidas por unidad y banco, con tests | ✅ |
 | 6 | Informe de reconciliación de P y Q | ✅ (`pq_reconciliation` + tablero) |
@@ -91,7 +91,7 @@ El objetivo del proyecto (separar pérdidas técnicas de PNT, priorizar campo) e
 | 10 | Cada punto con razones explicables | ✅ (SHAP top-3) |
 | 11 | Plan respeta presupuesto + reserva + ROI | ✅ |
 | 12 | Reejecución reproducible | ✅ (hash + seeds) |
-| 13 | Ningún valor de negocio en el código | ✅ (todo en `config/`) |
+| 13 | Ningún valor de negocio en el código | ✅ (todo en `config/`; la revisión sacó `fc`, `pf`, `secondary_loss_frac` y `hours_per_month` que quedaban embebidos, con test que lo impide) |
 
 ---
 

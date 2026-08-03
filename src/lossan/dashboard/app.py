@@ -107,7 +107,7 @@ def main() -> None:
     _metric_card(c[0], "Alimentadores", f"{len(status)}")
     _metric_card(c[1], "Avance medio", f"{status['progress_pct'].mean():.0f}%")
     _metric_card(c[2], "Balance cerrado", f"{int(status['balance_closed'].sum())}/{len(status)}",
-                 "Residuo < 0,5% y PNT ≥ 0 (§22.3)")
+                 "Verificaciones de coherencia física: PNT≥0, términos≤cabecera, rangos plausibles (§22.3)")
     _metric_card(c[3], "PNT global", f"{100*tot_pnt/tot_header:.1f}%",
                  "Pérdidas no técnicas sobre energía de cabecera")
     _metric_card(c[4], "Técnicas global", f"{100*tot_tech/tot_header:.1f}%")
@@ -201,8 +201,9 @@ def main() -> None:
     _metric_card(k[1], "PNT", f"{bal['pnt_pct']:.1f}%",
                  f"{bal['pnt_kwh']/1e3:.0f} MWh")
     _metric_card(k[2], "Técnicas", f"{bal['technical_pct']:.1f}%")
-    _metric_card(k[3], "Residuo balance", f"{bal['residual_pct']:.3f}%",
-                 "Objetivo < 0,5% (§22.3)")
+    _coh = bool(bal.get("balance_coherent", False))
+    _metric_card(k[3], "Cierre del balance", "Coherente" if _coh else "Revisar",
+                 str(bal.get("failed_checks", "")) or "Verificaciones físicas §22.3")
     rel = _filt(data["reliability"], fid)
     if not rel.empty:
         ri = rel.iloc[0]["reliability_index"]

@@ -26,7 +26,7 @@ def compute_site_imbalance(customers: pd.DataFrame, consumption: pd.DataFrame,
     k = float(cfg.electrical["loss_factor_k"])
     # resistencia de neutro aproximada del secundario (Ω) — parámetro
     rn_ohm = float(cfg.electrical.get("neutral_r_ohm", 0.3))
-    fp = F.loss_factor(0.45, k)
+    fp = F.loss_factor(float(cfg.electrical["default_load_factor"]), k)
 
     # energía por cliente y su fase
     e_cust = consumption.groupby("customer_unit_id")["kwh"].sum()

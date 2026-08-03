@@ -14,7 +14,9 @@ def _feeder(micro_config):
 
 def test_graph_is_radial_and_traces(micro_config):
     t = _feeder(micro_config)
-    fg = FeederGraph.build("F0000", t["segments"], t["sites"])
+    # los clientes/luminarias se registran explícitamente (no por nombre de nodo)
+    fg = FeederGraph.build("F0000", t["segments"], t["sites"],
+                           t["customers"], t["streetlights"])
     assert fg.n_nodes > 0 and fg.n_edges == fg.n_nodes - 1  # árbol
     assert fg.validate() == [] or all(f["rule"] != "TOPO_CYCLE" for f in fg.validate())
 

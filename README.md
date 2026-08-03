@@ -91,7 +91,8 @@ Lectura/escritura de FGDB con GDAL/OpenFileGDB (**sin `arcpy`**, §2.5).
 **Documentación:**
 **[Arquitectura](docs/ARQUITECTURA.md)** ·
 **[Referencia de módulos y funciones](docs/REFERENCIA.md)** ·
-**[Análisis de brechas](docs/BRECHAS.md)**
+**[Análisis de brechas](docs/BRECHAS.md)** ·
+**[Revisión de correctitud](docs/REVISION.md)**
 
 **Guías:**
 **[Datos requeridos (inventario)](docs/DATOS_REQUERIDOS.md)** ·
