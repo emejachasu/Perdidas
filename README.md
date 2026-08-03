@@ -77,10 +77,16 @@ lossan export-sample --fmt fgdb             # datos de prueba (CSV + GPKG + File
 lossan export-results --fmt fgdb            # capas de resultados para ArcGIS (§18)
 ```
 
-Lectura/escritura de FGDB con GDAL/OpenFileGDB (**sin `arcpy`**, §2.5). Guías:
+Lectura/escritura de FGDB con GDAL/OpenFileGDB (**sin `arcpy`**, §2.5).
+
+**Guías:**
+**[Datos requeridos (inventario)](docs/DATOS_REQUERIDOS.md)** ·
 **[Modelo de datos y conectividad](docs/DATA_MODEL.md)** ·
 **[Histórico necesario](docs/HISTORIA.md)** ·
-**[Windows paso a paso](docs/WINDOWS.md)** · **[Calibración](docs/TUNING.md)**.
+**[Windows paso a paso](docs/WINDOWS.md)** · **[Calibración](docs/TUNING.md)**
+
+**Ejemplo de calibración:** `python examples/calibrate.py --root data/lake --feeder F0000`
+(mide Precision@k contra la verdad-terreno, compara métodos PU y barre umbrales).
 
 ## Pruebas
 
