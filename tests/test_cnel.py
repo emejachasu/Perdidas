@@ -82,6 +82,7 @@ def _cnel_layers():
         "GLOBALID": ["{C1}", "{C2}", "{C3}", "{C4}"],
         "PUNTOCARGAGLOBALID": ["{PC1}", "{PC1}", "{PC1}", "{PC2}"],
         "ALIMENTADORID": ["ALIM01"] * 4,
+        "CODIGOUNICO": ["CU-001", "CU-002", "CU-003", "CU-004"],
         "CODIGOCLIENTE": ["CLI-1", "CLI-2", "CLI-3", "CLI-4"],
         "MDENUMFAB": ["M1", "M2", "M3", "M4"], "MEDMAR": ["A"] * 4,
         "TIPOMEDIDOR": ["MONO"] * 4, "SECUENCIAFASE": [4, 2, 1, 4],
@@ -175,7 +176,8 @@ def test_intra_load_point_dispersion_finding():
     cust = canon["customers"].copy()
     cust["tariff_class"] = "residential"
     cust["service_drop_kva"] = 10.0
-    kwh = {"{C1}": 300.0, "{C2}": 300.0, "{C3}": 20.0, "{C4}": 250.0}  # C3 sospechosa
+    kwh = {"CU-001": 300.0, "CU-002": 300.0, "CU-003": 20.0,
+           "CU-004": 250.0}   # CU-003 muy por debajo de sus pares del punto
     cons = pd.DataFrame([
         {"customer_unit_id": c, "feeder_id": "ALIM01", "year_month": ym, "kwh": kwh[c]}
         for c in kwh for ym in ("2024-01", "2024-02")
@@ -185,3 +187,95 @@ def test_intra_load_point_dispersion_finding():
     assert "dispersion_intra_punto" in set(findings["finding"])
     assert "{PC1}" in set(findings.loc[findings["finding"] == "dispersion_intra_punto",
                                        "load_point_id"])
+
+
+# ------------------------------- identificadores únicos y cruce comercial
+
+def _cnel_layers_with_attributes():
+    """Capas CNEL + ATRIBUTOSCONSUMIDOR (CUENTACONTRATO, tarifa, carga)."""
+    layers = _cnel_layers()
+    layers["ATRIBUTOSCONSUMIDOR"] = pd.DataFrame({
+        "CODIGOUNICO": ["CU-001", "CU-002", "CU-003", "CU-004"],
+        "CUENTACONTRATO": ["CC-100", "CC-101", "CC-102", "CC-103"],
+        "TIPOTARIFA": ["RESIDENCIAL", "COMERCIAL", "RESIDENCIAL-A", "INDUSTRIAL"],
+        "CATEGORIA": ["A", "B", "A", "C"],
+        "POTENCIAACTIVA": [3.5, 12.0, 4.0, 45.0],
+        "POTENCIAREACTIVA": [1.0, 4.0, 1.2, 15.0],
+        "CDAFAS": [1, 1, 1, 3],
+        "EDCCOD": ["A", "A", "A", "A"],
+        "NUMMEDIDOR": ["M1", "M2", "M3", "M4"],
+        "CONSUMOPROMEDIO": [200.0, 800.0, 150.0, 4000.0],
+    })
+    return layers
+
+
+def test_codigounico_is_the_unique_identifier():
+    """El id canónico de la conexión es CODIGOUNICO, no el GLOBALID."""
+    canon = build_canonical(_cnel_layers_with_attributes(), load_cnel_mapping())
+    cust = canon["customers"]
+    assert set(cust["customer_unit_id"]) == {"CU-001", "CU-002", "CU-003", "CU-004"}
+    assert "global_id" in cust.columns          # el GLOBALID se conserva
+    assert cust["customer_unit_id"].is_unique
+
+
+def test_cuentacontrato_and_tariff_from_attributes():
+    """ATRIBUTOSCONSUMIDOR aporta CUENTACONTRATO y la clase tarifaria."""
+    canon = build_canonical(_cnel_layers_with_attributes(), load_cnel_mapping())
+    cust = canon["customers"].set_index("customer_unit_id")
+    assert cust.loc["CU-001", "cuenta_contrato"] == "CC-100"
+    assert cust.loc["CU-001", "tariff_class"] == "residential"
+    assert cust.loc["CU-002", "tariff_class"] == "commercial"
+    assert cust.loc["CU-003", "tariff_class"] == "residential"   # variante '-A'
+    assert cust.loc["CU-004", "tariff_class"] == "industrial"
+    assert cust.loc["CU-004", "installed_load_kw"] == 45.0
+
+
+def test_consumption_linked_by_cuenta_contrato():
+    """El consumo comercial entra por CUENTACONTRATO y se traduce a CODIGOUNICO."""
+    from lossan.io import link_consumption_to_connections
+    canon = build_canonical(_cnel_layers_with_attributes(), load_cnel_mapping())
+    cust = canon["customers"]
+    cons = pd.DataFrame({
+        "cuenta_contrato": ["CC-100", "CC-101", "CC-999"],   # la última no existe
+        "year_month": ["2024-01"] * 3, "kwh": [100.0, 200.0, 50.0],
+    })
+    linked, stats = link_consumption_to_connections(cons, cust)
+    assert linked.loc[0, "customer_unit_id"] == "CU-001"
+    assert linked.loc[1, "customer_unit_id"] == "CU-002"
+    assert pd.isna(linked.loc[2, "customer_unit_id"])   # sin conexión en el SIG
+    assert stats["matched"] == 2 and stats["unmatched"] == 1
+
+
+# ------------------------------------------- zonas por trazado nativo ArcFM
+
+def test_zones_from_arcfm_trace():
+    """ArcFM ya resuelve la traza: la zona se obtiene agrupando por el GUID."""
+    from lossan.topology import build_zones_from_arcfm
+    devices = pd.DataFrame({"device_id": ["{D1}", "{D2}"],
+                            "node_id": ["{CSD1}", "{CSD2}"]})
+    sites = pd.DataFrame({"site_id": ["{TS1}", "{TS2}", "{TS3}"],
+                          "parent_circuit_source": ["{CSD1}", "{CSD1}", "{CSD2}"]})
+    customers = pd.DataFrame({"customer_unit_id": ["a", "b", "c"],
+                              "parent_circuit_source": ["{CSD1}", "{CSD2}", "{CSD2}"]})
+    z = build_zones_from_arcfm(devices, {"sites": sites, "customers": customers},
+                               "ALIM01").set_index("zone_id")
+    assert z.loc["{CSD1}", "n_tx_sites"] == 2
+    assert z.loc["{CSD1}", "n_customers"] == 1
+    assert z.loc["{CSD2}", "n_tx_sites"] == 1
+    assert z.loc["{CSD2}", "n_customers"] == 2
+    assert set(z["source"]) == {"arcfm_trace"}
+
+
+def test_missing_codigounico_falls_back_to_globalid():
+    """Sin CODIGOUNICO la conexión NO puede desaparecer del balance."""
+    layers = _cnel_layers()
+    cc = layers["CONEXIONCONSUMIDOR"].copy()
+    cc.loc[0, "CODIGOUNICO"] = None      # dato faltante en producción
+    cc.loc[1, "CODIGOUNICO"] = "   "     # vacío
+    layers["CONEXIONCONSUMIDOR"] = cc
+    canon = build_canonical(layers, load_cnel_mapping())
+    cust = canon["customers"]
+    assert len(cust) == 4                       # ninguna se pierde
+    assert cust["customer_unit_id"].notna().all()
+    assert cust.loc[0, "customer_unit_id"] == "{C1}"   # cayó al GLOBALID
+    assert cust.loc[2, "customer_unit_id"] == "CU-003"  # el resto conserva el suyo

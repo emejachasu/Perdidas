@@ -13,6 +13,48 @@ import pandas as pd
 from .graph import FeederGraph
 
 
+def build_zones_from_arcfm(devices: pd.DataFrame, children: dict[str, pd.DataFrame],
+                           feeder_id: str,
+                           parent_key: str = "node_id",
+                           child_key: str = "parent_circuit_source") -> pd.DataFrame:
+    """Zonas de protección a partir del trazado nativo de ArcFM (§7.5).
+
+    En el modelo de CNEL, ``PuestoProteccionDinamico.CIRCUITSOURCEGUID`` se
+    propaga a ``PARENTCIRCUITSOURCEGUID`` de todo lo que cuelga aguas abajo
+    (transformadores, puntos de carga, luminarias, tramos). ArcFM **ya resolvió
+    la traza**, así que la zona se obtiene agrupando por esa clave, sin recorrer
+    el grafo — y coincide con la definición operativa de ramal.
+
+    ``children``: {nombre_entidad: DataFrame con la columna ``child_key``}.
+    """
+    cols = ["feeder_id", "zone_id", "device_id", "n_customers", "n_tx_sites",
+            "n_streetlights", "source"]
+    if devices is None or devices.empty or parent_key not in devices.columns:
+        return pd.DataFrame(columns=cols)
+
+    rows = []
+    for d in devices.itertuples():
+        guid = getattr(d, parent_key, None)
+        if guid is None or (isinstance(guid, float) and pd.isna(guid)):
+            continue
+        counts = {}
+        for name, df in (children or {}).items():
+            if df is None or df.empty or child_key not in df.columns:
+                counts[name] = 0
+            else:
+                counts[name] = int((df[child_key] == guid).sum())
+        rows.append({
+            "feeder_id": feeder_id,
+            "zone_id": str(guid),
+            "device_id": getattr(d, "device_id", None),
+            "n_customers": counts.get("customers", 0),
+            "n_tx_sites": counts.get("sites", 0),
+            "n_streetlights": counts.get("streetlights", 0),
+            "source": "arcfm_trace",
+        })
+    return pd.DataFrame(rows, columns=cols)
+
+
 def build_protection_zones(fg: FeederGraph, devices: pd.DataFrame,
                            sites: pd.DataFrame | None = None,
                            customers: pd.DataFrame | None = None) -> tuple[pd.DataFrame, dict]:

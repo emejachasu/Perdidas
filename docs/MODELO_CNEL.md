@@ -43,6 +43,22 @@ de ArcFM, que ya resuelve la traza padre→hijo.
 | `Luminaria` + `UNIDADLUMINARIA` | `streetlights` | |
 | `PuestoProteccionDinamico` | `switching_devices` | define zonas de protección |
 
+## 2.1 Identificadores únicos
+
+| Identificador | Dónde vive | Uso |
+|---|---|---|
+| **`CODIGOUNICO`** | `CONEXIONCONSUMIDOR` y `ATRIBUTOSCONSUMIDOR` | **id canónico de la conexión** (`customer_unit_id`) y clave de unión entre la capa gráfica y los atributos comerciales |
+| **`CUENTACONTRATO`** | `ATRIBUTOSCONSUMIDOR` | **id único del sistema comercial**: por él llega el histórico de consumo |
+| `GLOBALID` | todas las capas | trazabilidad SIG y resolución de las relaciones padre-hijo |
+
+El `GLOBALID` **no** se usa como identificador de negocio de la conexión: se
+conserva en `global_id` y sirve de respaldo si `CODIGOUNICO` viniera vacío (en
+ese caso el adaptador avisa, para que la conexión no desaparezca del balance).
+
+`ATRIBUTOSCONSUMIDOR` aporta además lo que la capa gráfica no tiene:
+**`TIPOTARIFA`** (→ clase tarifaria), `POTENCIAACTIVA` (carga instalada),
+`CDAFAS`, estado del servicio y datos del medidor.
+
 ## 3. Qué cambió en el modelo eléctrico
 
 ### 3.1 Configuración de banco: ya no se infiere
@@ -99,8 +115,9 @@ lossan cnel-domains "C:\ruta\SIGELEC.gdb" --domain "Phase"
 # 2) ingerir resolviendo la jerarquía completa
 lossan ingest-cnel "C:\ruta\SIGELEC.gdb"
 
-# 3) consumo del sistema comercial (se cruza por CODIGOCLIENTE)
-lossan ingest-consumption consumo.csv --map customer_unit_id=CODIGOCLIENTE,...
+# 3) consumo del sistema comercial: llega por CUENTACONTRATO y se traduce
+#    automáticamente a CODIGOUNICO usando ATRIBUTOSCONSUMIDOR
+lossan ingest-consumption consumo.csv --map cuenta_contrato=CUENTA_CONTRATO,year_month=PERIODO,kwh=CONSUMO
 
 # 4) analizar
 lossan run
@@ -108,7 +125,18 @@ lossan run
 
 La ingesta reporta la jerarquía detectada (cuántas unidades por puesto y cuántas
 conexiones por punto de carga), que es la verificación de que el modelo se leyó
-correctamente.
+correctamente. La ingesta de consumo reporta la **tasa de cruce** comercial↔SIG
+y avisa por debajo del 95 %: un cruce bajo invalida el balance, así que es el
+primer control de calidad a mirar.
+
+## 4.1 Zonas de protección desde el trazado nativo
+
+ArcFM ya resuelve la traza: `PuestoProteccionDinamico.CIRCUITSOURCEGUID` se
+propaga a `PARENTCIRCUITSOURCEGUID` de todo lo que cuelga aguas abajo. La
+función `build_zones_from_arcfm()` obtiene las zonas agrupando por esa clave,
+sin recorrer el grafo, y coincide con la definición operativa de ramal (§7.5).
+Se usa como fuente primaria cuando el dato existe, y el recorrido del grafo
+(`build_protection_zones`) queda como respaldo y contraste.
 
 ## 5. Datos que la GDB no tiene
 

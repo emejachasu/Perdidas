@@ -122,15 +122,39 @@ layers:
   customers:                   # CONEXION CONSUMIDOR = unidad de servicio (medidor)
     layer: CONEXIONCONSUMIDOR
     fields:
-      customer_unit_id: GLOBALID
+      # CODIGOUNICO es el IDENTIFICADOR ÚNICO de la conexión (no el GLOBALID):
+      # es el que viaja al sistema comercial y el que une con ATRIBUTOSCONSUMIDOR.
+      customer_unit_id: CODIGOUNICO
+      global_id: GLOBALID                      # se conserva para trazabilidad SIG
       site_id: PUNTOCARGAGLOBALID              # su punto de carga (puesto)
-      customer_code: CODIGOCLIENTE             # cruce con el sistema comercial
+      customer_code: CODIGOCLIENTE
       meter_serial: MDENUMFAB
       meter_brand: MEDMAR
       meter_type: TIPOMEDIDOR
       phase_raw: SECUENCIAFASE
       prepaid: PREPAGO
       status: ESTADO
+
+  # Atributos comerciales del consumidor. Se une a CONEXIONCONSUMIDOR por
+  # CODIGOUNICO y aporta la CUENTACONTRATO (identificador único comercial),
+  # la clase tarifaria y la carga instalada, que no están en la capa gráfica.
+  customer_attributes:
+    layer: ATRIBUTOSCONSUMIDOR
+    join_key: CODIGOUNICO
+    fields:
+      customer_unit_id: CODIGOUNICO
+      cuenta_contrato: CUENTACONTRATO          # ID único del sistema comercial
+      tariff_raw: TIPOTARIFA                   # -> tariff_class (dominio TipoTarifaCIS)
+      category: CATEGORIA
+      installed_load_kw: POTENCIAACTIVA
+      installed_reactive_kvar: POTENCIAREACTIVA
+      n_phases: CDAFAS
+      service_status: EDCCOD
+      meter_number: NUMMEDIDOR
+      voltage_level: NIVTENSION
+      avg_consumption: CONSUMOPROMEDIO
+      last_month_kwh: CLIULTCONM
+      agency: AGENCIA
 
   streetlights:
     layer: Luminaria
@@ -183,3 +207,23 @@ domains:
 
   # Estado de la conexión consumidor que cuenta como servicio activo.
   active_status_values: [1, "1", "ACTIVO", "A"]
+
+  # 'TipoTarifaCIS' -> clase tarifaria canónica. Las claves se comparan en
+  # mayúsculas sin espacios; los prefijos permiten variantes (RESIDENCIAL-A...).
+  tariff_class:
+    RESIDENCIAL: residential
+    RESIDENCIALTEMPORAL: residential
+    COMERCIAL: commercial
+    COMERCIALOTROS: commercial
+    INDUSTRIAL: industrial
+    INDUSTRIALARTESANAL: industrial
+    ALUMBRADOPUBLICO: streetlight_led
+    OTROS: commercial
+  tariff_class_default: residential
+
+# --- Cruce con el sistema comercial (consumo histórico) -------------------
+# CUENTACONTRATO y CODIGOUNICO son los identificadores únicos. El histórico de
+# consumo suele venir por CUENTACONTRATO; el SIG identifica por CODIGOUNICO.
+commercial_join:
+  primary_key: cuenta_contrato       # clave preferente en el sistema comercial
+  fallback_key: customer_unit_id     # CODIGOUNICO si el consumo viene por él

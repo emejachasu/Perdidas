@@ -82,6 +82,27 @@ def decode_bank_config(value, domain: dict, n_units: int | None = None) -> str:
     return BankConfig.INDEPENDENT.value
 
 
+def decode_tariff(value, domain: dict, default: str = "residential") -> str:
+    """Traduce el dominio 'TipoTarifaCIS' a la clase tarifaria canónica.
+
+    Compara en mayúsculas sin separadores y admite variantes por prefijo
+    (p. ej. ``RESIDENCIAL-A`` → ``residential``). Si no reconoce el valor
+    devuelve ``default`` en vez de inventar una clase.
+    """
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return default
+    key = re.sub(r"[^A-Z0-9]", "", str(value).strip().upper())
+    if not key:
+        return default
+    if key in domain:
+        return domain[key]
+    # variantes: el valor empieza por una clave conocida (la más larga gana)
+    for k in sorted(domain, key=len, reverse=True):
+        if key.startswith(k):
+            return domain[k]
+    return default
+
+
 def parse_kva(value) -> float | None:
     """Extrae el kVA de un campo que en CNEL viene como texto de dominio."""
     if value is None or (isinstance(value, float) and pd.isna(value)):
@@ -179,6 +200,23 @@ def build_canonical(layers: dict[str, pd.DataFrame], mapping: dict,
     # --- conexiones consumidor (medidores) ---
     cust = get("customers")
     if cust is not None:
+        # El identificador único es CODIGOUNICO. Si falta o viene vacío en
+        # algunas filas, se cae a GLOBALID para no perder la conexión: quedarse
+        # sin id la haría desaparecer del balance silenciosamente.
+        if "customer_unit_id" not in cust.columns:
+            cust["customer_unit_id"] = None
+        blank = cust["customer_unit_id"].isna() | \
+            (cust["customer_unit_id"].astype(str).str.strip() == "")
+        if blank.any():
+            if "global_id" in cust.columns:
+                cust.loc[blank, "customer_unit_id"] = cust.loc[blank, "global_id"]
+                logger.warning(
+                    f"{int(blank.sum())} conexiones sin CODIGOUNICO: se usa "
+                    f"GLOBALID como identificador (revisar calidad del dato).")
+            else:
+                raise ValueError(
+                    "CONEXIONCONSUMIDOR sin CODIGOUNICO ni GLOBALID: no hay "
+                    "identificador único para la conexión.")
         if "phase_raw" in cust:
             cust["phase"] = cust["phase_raw"].map(lambda v: decode_phase(v, phase_dom))
             cust = cust.drop(columns=["phase_raw"])
@@ -195,8 +233,27 @@ def build_canonical(layers: dict[str, pd.DataFrame], mapping: dict,
                     else inherited
             if "service_drop_kva" in lp.columns:
                 cust["service_drop_kva"] = cust["site_id"].map(lp["service_drop_kva"])
-        if "tariff_class" not in cust.columns:
-            cust["tariff_class"] = "residential"   # se completa desde el comercial
+        # --- enriquecer con ATRIBUTOSCONSUMIDOR (CUENTACONTRATO, tarifa, carga) ---
+        attrs_spec = lmap.get("customer_attributes")
+        attrs_raw = layers.get(attrs_spec["layer"]) if attrs_spec else None
+        if attrs_raw is not None and not attrs_raw.empty:
+            attrs = _rename(attrs_raw, attrs_spec["fields"])
+            attrs = attrs.drop_duplicates(subset=["customer_unit_id"])
+            before = len(cust)
+            cust = cust.merge(attrs, on="customer_unit_id", how="left",
+                              suffixes=("", "_attr"))
+            matched = int(cust["cuenta_contrato"].notna().sum()) \
+                if "cuenta_contrato" in cust else 0
+            logger.info(f"ATRIBUTOSCONSUMIDOR: {matched}/{before} conexiones "
+                        f"enlazadas por CODIGOUNICO")
+        tdom = dom.get("tariff_class", {})
+        tdefault = dom.get("tariff_class_default", "residential")
+        if "tariff_raw" in cust.columns:
+            cust["tariff_class"] = cust["tariff_raw"].map(
+                lambda v: decode_tariff(v, tdom, tdefault))
+            cust = cust.drop(columns=["tariff_raw"])
+        elif "tariff_class" not in cust.columns:
+            cust["tariff_class"] = tdefault
         out["customers"] = cust
 
     # --- luminarias y dispositivos ---
@@ -245,7 +302,7 @@ def ingest_cnel_fgdb(path: str, root: str, mapping: dict | None = None,
     from .fgdb import read_layer
 
     mapping = mapping or load_cnel_mapping()
-    needed = {spec["layer"] for spec in mapping["layers"].values()}
+    needed = {spec["layer"] for spec in mapping["layers"].values() if "layer" in spec}
     layers: dict[str, pd.DataFrame] = {}
     for name in sorted(needed):
         try:
