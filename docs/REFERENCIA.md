@@ -14,7 +14,8 @@ Paquete: `src/lossan/` · CLI: `lossan` · Cobertura de pruebas: `tests/` (51 te
 | Comando | Qué hace |
 |---|---|
 | `generate` | Genera el universo sintético en BRONZE |
-| `run` | Ejecuta el pipeline por alimentador (incremental por hash) |
+| `run` | Ejecuta el pipeline (`--level full\|n1`, incremental por hash) |
+| `bench` | Prueba de escala: genera N alimentadores y extrapola a 960 (§2.1) |
 | `status` | Resumen del avance por alimentador desde GOLD |
 | `feeder-report <F>` | Elementos conectados por traza + desglose de pérdidas |
 | `dashboard` | Lanza el dashboard web (Streamlit) |
@@ -115,11 +116,18 @@ Pérdidas: `resistance_at_temp`, `conductor_loss_3ph_balanced/unbalanced`, `cond
 - `plan.build_inspection_plan(root)` — plan + rankings + resumen (Precision@k).
 
 ## Pipeline (orquestación)
-- `pipeline.balance.analyze_feeder(tables)` — F3/F5.
+- `pipeline.balance.analyze_feeder(tables)` — F3/F5 (ENS incluida, §7.6).
 - `pipeline.technical` — `transformer_site_energy_loss_kwh`, `secondary_conductor_loss_kwh`.
-- `pipeline.analyze.analyze_feeder_full(tables)` — F2+F3/F5+F4+F6+F7.
-- `pipeline.runner.run(root, ...)` — orquesta + incremental + transferencias; `list_feeders`.
+- `pipeline.reconciliation.reconcile_feeder / reconcile_all` — informe P/Q (§9.3).
+- `pipeline.transfer_credit.apply_transfer_credits(lake, cfg)` — acredita transferencias (§7.3).
+- `pipeline.analyze.analyze_feeder_full(tables, level)` — F2+F3/F5(+F4+F6+F7 si `full`).
+- `pipeline.runner.run(root, level, ...)` — orquesta + incremental + transferencias + reconciliación; `list_feeders`.
 - `pipeline.prioritization_step.build_plan_and_mark(lake, cfg)` — F8 + marca de avance.
+
+## Topología dinámica (§7) — `lossan.topology.dynamic`
+- `infer_transfers(header_wide)`, `quantify_transfers(header_wide, transfers)` — detección y cuantificación (§7.4).
+- `estimate_ens_kwh(events)` — energía no suministrada (§7.6).
+- `reconstruct_topology_versions(events, start, end)` — versiones por intervalo (§7.3).
 
 ## Lakehouse — `lossan.lakehouse.storage` (§2.2)
 - `Lakehouse(root)` — rutas Bronze/Silver/Gold, `write_partition`, `read_entity`, `query` (DuckDB), estado incremental (`needs_recompute`, `mark_done`).

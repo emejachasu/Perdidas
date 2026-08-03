@@ -36,7 +36,7 @@ PLANNED_STAGES = {"state_estimation", "prioritization"}
 def _bronze_entities(lake: Lakehouse, fid: str) -> dict[str, pd.DataFrame]:
     entities = ["poles", "sites", "transformer_units", "customers",
                 "streetlights", "consumption", "header_meters",
-                "segments", "switching_devices", "theft_labels"]
+                "segments", "switching_devices", "switching_events", "theft_labels"]
     return {e: lake.read_entity("bronze", e, fid) for e in entities}
 
 
@@ -49,20 +49,20 @@ def list_feeders(lake: Lakehouse) -> list[str]:
     return feeders
 
 
-def _process_one(root: str, fid: str, force: bool) -> dict:
+def _process_one(root: str, fid: str, force: bool, level: str = "full") -> dict:
     cfg = load_config()
     lake = Lakehouse(root)
     tables = _bronze_entities(lake, fid)
     ihash = feeder_input_hash(
         tables["sites"], tables["transformer_units"],
         tables["customers"], tables["consumption"], tables["header_meters"],
-        extra=cfg.active_profile_name,
+        extra=f"{cfg.active_profile_name}:{level}",
     )
     if not force and not lake.needs_recompute(fid, ihash):
         return {"feeder_id": fid, "status": "skipped", "input_hash": ihash}
 
     t0 = time.perf_counter()
-    gold, stages_done = analyze_feeder_full(tables, cfg)
+    gold, stages_done = analyze_feeder_full(tables, cfg, level=level)
     for entity, df in gold.items():
         lake.write_partition("gold", entity, fid, df)
 
@@ -87,8 +87,13 @@ def _process_one(root: str, fid: str, force: bool) -> dict:
 
 
 def run(root: str, feeders: list[str] | None = None, force: bool = False,
-        workers: int | None = None, cfg: Config | None = None) -> dict:
-    """Ejecuta el pipeline sobre todos (o algunos) alimentadores."""
+        workers: int | None = None, cfg: Config | None = None,
+        level: str = "full") -> dict:
+    """Ejecuta el pipeline sobre todos (o algunos) alimentadores.
+
+    ``level``: 'full' (todas las fases) o 'n1' (tamizaje: topología + balance,
+    sin flujo/estado/ML — para corridas masivas rápidas, §2.4).
+    """
     cfg = cfg or load_config()
     lake = Lakehouse(root)
     feeders = feeders or list_feeders(lake)
@@ -101,26 +106,37 @@ def run(root: str, feeders: list[str] | None = None, force: bool = False,
     results = []
     if workers == 1 or len(feeders) == 1:
         for fid in feeders:
-            results.append(_process_one(root, fid, force))
+            results.append(_process_one(root, fid, force, level))
     else:
         with ProcessPoolExecutor(max_workers=workers) as ex:
-            futs = [ex.submit(_process_one, root, fid, force) for fid in feeders]
+            futs = [ex.submit(_process_one, root, fid, force, level) for fid in feeders]
             for f in futs:
                 results.append(f.result())
 
     # --- §7.4: detección de transferencias entre alimentadores (nivel sistema) ---
     try:
         _detect_transfers(lake)
+        from .transfer_credit import apply_transfer_credits
+        apply_transfer_credits(lake, cfg)      # §7.3 acredita al balance
     except Exception as e:  # pragma: no cover
-        logger.warning(f"Detección de transferencias falló: {e}")
+        logger.warning(f"Transferencias falló: {e}")
+
+    # --- §9.3: informe de reconciliación de P y Q (nivel sistema) ---
+    try:
+        from .reconciliation import reconcile_all
+        rec = reconcile_all(lake, cfg)
+        logger.info(f"Reconciliación P/Q: {rec}")
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"Reconciliación falló: {e}")
 
     # --- F8: priorización con presupuesto (nivel sistema) ---
-    try:
-        from .prioritization_step import build_plan_and_mark
-        plan_res = build_plan_and_mark(lake, cfg)
-        logger.info(f"Plan de campaña: {plan_res}")
-    except Exception as e:  # pragma: no cover
-        logger.warning(f"Priorización falló: {e}")
+    if level == "full":
+        try:
+            from .prioritization_step import build_plan_and_mark
+            plan_res = build_plan_and_mark(lake, cfg)
+            logger.info(f"Plan de campaña: {plan_res}")
+        except Exception as e:  # pragma: no cover
+            logger.warning(f"Priorización falló: {e}")
 
     processed = sum(1 for r in results if r["status"] == "processed")
     skipped = sum(1 for r in results if r["status"] == "skipped")

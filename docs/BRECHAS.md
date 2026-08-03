@@ -17,7 +17,15 @@ El objetivo del proyecto (separar pérdidas técnicas de PNT, priorizar campo) e
 
 ## Detalle por módulo
 
+> **Actualización:** las tres brechas de alta prioridad ya están **implementadas
+> y probadas**: informe de reconciliación de P y Q (§9.3), acreditación de
+> transferencias + ENS en el balance (§7.3/§7.6) y prueba de escala N1 (§2.1)
+> con extrapolación a 960 dentro del objetivo de 8 h.
+
 ### ✅ Completo (funcional y probado)
+- **§9.3** informe de reconciliación de P y Q (corregido vs actual, por causa).
+- **§7.6** ENS descontada del balance; **§7.3/§7.4** transferencias cuantificadas y acreditadas.
+- **§2.1/§2.4** prueba de escala N1 + niveles de profundidad (`lossan run --level n1`, `lossan bench`).
 - **F0** lakehouse Bronze/Gold + DuckDB + incremental por hash + generador sintético.
 - **§5** jerarquía poste/puesto/unidad y **agregación de banco** (delta abierto, desiguales, P0/Pk por unidad) con tests.
 - **§9** todas las fórmulas P/Q/S/I con test de caso manual y propiedades.
@@ -34,8 +42,7 @@ El objetivo del proyecto (separar pérdidas técnicas de PNT, priorizar campo) e
 ### 🟨 Parcial (implementado con simplificación)
 | Ref | Qué falta para completarlo | Impacto |
 |---|---|---|
-| §7.3 | El balance usa el periodo completo; falta **acreditar la energía transferida** por intervalo de topología al alimentador correcto | Balances que no cierran donde hay transferencias |
-| §7.6 | **ENS** (energía no suministrada) no se descuenta aún del balance | Sobrestima pérdidas en zonas con muchas interrupciones |
+| §7.3 | Transferencias ya acreditadas al balance; falta afinarlo **por intervalo de topología** (hoy a nivel de periodo) | Menor precisión temporal |
 | §8.2/§8.3 | Falta el **clasificador de auto-consistencia** (LightGBM predice el conductor por contexto) y el **índice de confiabilidad 0-100** por alimentador/zona | Menos detección de atributos mal cargados |
 | §9.4 | Curvas de carga por **clustering** (k-means/DTW); hoy se usa un FC representativo | Menor precisión horaria (afecta N2/N3) |
 | §10 | **Efemérides** (astral) para horas de AP por latitud/mes; anomalías de AP (day-burning, conexión ilegal, tecnología declarada≠instalada) | AP con horas fijas; sin categoría de hurto en AP |
@@ -48,13 +55,11 @@ El objetivo del proyecto (separar pérdidas técnicas de PNT, priorizar campo) e
 ### ⬜ Pendiente (no implementado)
 | Ref | Elemento | Prioridad sugerida |
 |---|---|---|
-| §9.3 | **Informe de reconciliación de P y Q** (actual vs corregido, por causa) — *primer entregable de valor* | 🔴 Alta |
 | §12 | **Monte Carlo P10/P50/P90** (propagación de incertidumbre) | 🟡 Media |
 | §11/§19 | Reproducción **IEEE 13/34/123** con fallo de CI ante degradación | 🟡 Media |
 | §14.1 | **Envejecimiento térmico** IEEE C57.91 / IEC 60076-7 | 🟢 Baja |
 | §15.4 | **IPW** (corrección de sesgo de selección por propensidad de inspección) | 🟡 Media |
 | §2.3 | **Orquestador Dagster/Prefect** (hoy `multiprocessing`) | 🟡 Media |
-| §2.1 | **Prueba de escala 960 / 2,7 M** (hoy demostrado a 12 alimentadores) | 🔴 Alta |
 | §18 | **Reporte ejecutivo PDF** (weasyprint/jinja2) y **ficha de inspección** por poste | 🟡 Media |
 | §18/§23 | Publicación a **PostGIS** y simbología **.lyrx** | 🟢 Baja |
 | §23.1 | Integración de captura con **Survey123/Field Maps** (externo a este repo) | 🟡 Media |
@@ -65,12 +70,12 @@ El objetivo del proyecto (separar pérdidas técnicas de PNT, priorizar campo) e
 
 | # | Criterio | Estado |
 |---|---|---|
-| 1 | Procesa el universo dentro de §2.3 | 🟨 demostrado a 12 alim.; falta 960 |
+| 1 | Procesa el universo dentro de §2.3 | ✅ N1 extrapola a 960 < 8 h; falta corrida real 960 |
 | 2 | Reproduce IEEE 13/34/123 | ⬜ (validado vs OpenDSS en caso canónico) |
 | 3 | Balance cierra con residuo < 0,5 % | ✅ (12/12) |
 | 4 | Fórmulas §9.2 con test de caso manual | ✅ |
 | 5 | Capacidad/pérdidas por unidad y banco, con tests | ✅ |
-| 6 | Informe de reconciliación de P y Q | ⬜ |
+| 6 | Informe de reconciliación de P y Q | ✅ (`pq_reconciliation` + tablero) |
 | 7 | R01-R25 + P01-P12 como capa geoespacial navegable | ✅ (capa + suggested_value) |
 | 8 | Minería validada contra inspecciones | ✅ (recall reportado) |
 | 9 | Evaluación por Precision@k, no AUC-ROC | ✅ |
@@ -83,14 +88,14 @@ El objetivo del proyecto (separar pérdidas técnicas de PNT, priorizar campo) e
 
 ## Recomendación de siguientes pasos (orden de valor)
 
-1. **Informe de reconciliación de P y Q** (§9.3) — el requerimiento lo marca como
-   primer entregable de valor y es de bajo costo sobre lo ya construido.
-2. **Acreditar transferencias y ENS en el balance** (§7.3/§7.6) — cierra los
-   balances que hoy no cierran.
-3. **Prueba de escala 960** con datos sintéticos + orquestador Dagster (§2.1/§2.3).
-4. **Flujo 3φ desbalanceado + IEEE 13/34/123** (§11) para N3 forense.
-5. **Reporte ejecutivo PDF y ficha de inspección por poste** (§18).
-6. **IPW + índice de confiabilidad + Monte Carlo** para robustez estadística.
+Las tres brechas de alta prioridad (§9.3 reconciliación, §7.3/§7.6 transferencias
++ ENS, §2.1 escala N1) ya están **hechas**. Siguientes:
+
+1. **Flujo 3φ desbalanceado + IEEE 13/34/123** (§11) para N3 forense.
+2. **Reporte ejecutivo PDF y ficha de inspección por poste** (§18).
+3. **Corrida real de 960 con orquestador Dagster** (§2.3) sobre la base N1 ya lista.
+4. **IPW + índice de confiabilidad + Monte Carlo P10/P50/P90** para robustez.
+5. **Efemérides y anomalías de AP** (§10); **%Desbalance** por fase (§14.2).
 
 Nada de lo pendiente invalida el flujo actual: son profundizaciones sobre una
 base operativa y probada (51 tests en verde).

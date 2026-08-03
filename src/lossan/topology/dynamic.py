@@ -10,6 +10,50 @@ import numpy as np
 import pandas as pd
 
 
+def estimate_ens_kwh(events: pd.DataFrame) -> float:
+    """Energía no suministrada (§7.6): Σ duración × carga afectada por falla.
+
+    La ENS no es pérdida; si no se descuenta aparece como tal en el balance.
+    """
+    if events is None or events.empty:
+        return 0.0
+    ev = events
+    if "motivo" in ev.columns:
+        ev = ev[ev["motivo"] == "falla"]
+    if ev.empty or "duration_h" not in ev.columns or "affected_kw" not in ev.columns:
+        return 0.0
+    return float((ev["duration_h"].astype(float) * ev["affected_kw"].astype(float)).sum())
+
+
+def quantify_transfers(header_wide: pd.DataFrame, transfers: pd.DataFrame) -> pd.DataFrame:
+    """Cuantifica y acredita la energía transferida por alimentador (§7.4).
+
+    Para cada par detectado, estima la energía transferida y la acredita: el
+    alimentador que **ganó** carga (cabecera al alza) recibe crédito negativo
+    (se le resta), el que **perdió** recibe crédito positivo. El balance suma
+    este término (``+ transferred``), evitando PNT inflada en uno y negativa en
+    el vecino.
+    """
+    cols = ["feeder_id", "transferred_kwh"]
+    if transfers is None or transfers.empty or header_wide.empty:
+        return pd.DataFrame(columns=cols)
+    n_months = header_wide.shape[0]
+    half = max(1, n_months // 2)
+    credit: dict[str, float] = {}
+    for r in transfers.itertuples():
+        fa, fb = r.feeder_a, r.feeder_b
+        if fa not in header_wide.columns or fb not in header_wide.columns:
+            continue
+        mean_month = 0.5 * (header_wide[fa].mean() + header_wide[fb].mean())
+        frac = min(abs(r.shift_a_pct), abs(r.shift_b_pct)) / 100.0
+        e_transferred = frac * mean_month * half
+        # signo: quien subió (shift>0) ganó carga -> crédito negativo
+        credit[fa] = credit.get(fa, 0.0) + (-e_transferred if r.shift_a_pct > 0 else e_transferred)
+        credit[fb] = credit.get(fb, 0.0) + (-e_transferred if r.shift_b_pct > 0 else e_transferred)
+    return pd.DataFrame([{"feeder_id": k, "transferred_kwh": round(v, 1)}
+                         for k, v in credit.items()], columns=cols)
+
+
 def reconstruct_topology_versions(events: pd.DataFrame,
                                   period_start: str, period_end: str) -> pd.DataFrame:
     """Reconstruye estados topológicos válidos por intervalo (§7.3).

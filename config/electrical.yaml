@@ -1,6 +1,7 @@
 # Parámetros eléctricos y de calibración (§9, Anexo A). Valores por defecto documentados.
 electrical:
   loss_factor_k: 0.15          # Buller-Woodrow FP = k*FC + (1-k)*FC^2 (calibrable)
+  naive_pf_default: 0.80       # cosφ plano que suele asumir el cálculo actual (§9.3)
   # cosφ por clase tarifaria (calibrable contra factor de potencia de cabecera)
   power_factor_by_class:
     residential: 0.93

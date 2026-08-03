@@ -103,7 +103,11 @@ def analyze_feeder(tables: dict[str, pd.DataFrame], cfg: Config | None = None) -
                                                      SECONDARY_LOSS_PCT, fp)
 
     # --- Balance jerárquico (§13) ---
-    ens = 0.0  # F0: sin log de conmutación; ENS=0 (se añade en F5)
+    # ENS (§7.6): energía no suministrada por fallas; no es pérdida.
+    from ..topology import estimate_ens_kwh
+    ens = estimate_ens_kwh(tables.get("switching_events"))
+    # Transferencias entre alimentadores: se acreditan a nivel de sistema
+    # (apply_transfer_credits) tras detectarlas; aquí el término base es 0.
     transferred = 0.0
     losses_total = energy_header + transferred - energy_billed - energy_streetlight - ens
     pnt = losses_total - energy_technical

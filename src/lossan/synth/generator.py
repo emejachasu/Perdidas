@@ -80,6 +80,7 @@ class SyntheticGenerator:
         consumption, labels = self._consumption(rng, fid, customers)
         header = self._header(fid, sites, units, customers, consumption, streetlights)
         segments, devices, anomalies = self._network(rng, fid, sites, customers, poles)
+        events = self._switching_events(rng, fid, devices, customers)
 
         return {
             "poles": poles,
@@ -92,8 +93,30 @@ class SyntheticGenerator:
             "theft_labels": labels,
             "segments": segments,
             "switching_devices": devices,
+            "switching_events": events,
             "anomaly_labels": anomalies,
         }
+
+    def _switching_events(self, rng, fid, devices, customers) -> pd.DataFrame:
+        """Genera algunos eventos de falla con duración y carga afectada (§7.2/§7.6)."""
+        if devices is None or devices.empty:
+            return pd.DataFrame(columns=["device_id", "feeder_id", "timestamp",
+                                         "estado_previo", "estado_nuevo", "motivo",
+                                         "duration_h", "affected_kw"])
+        avg_load_kw = float(customers["base_kwh"].sum()) / 730.0 if "base_kwh" in customers else 0.0
+        n_ev = int(rng.integers(1, 4))
+        rows = []
+        for j in range(n_ev):
+            dev = devices.sample(1, random_state=int(rng.integers(0, 1e6))).iloc[0]
+            month = int(rng.integers(1, 12))
+            rows.append({
+                "device_id": dev["device_id"], "feeder_id": fid,
+                "timestamp": f"2023-{month:02d}-15 03:00:00",
+                "estado_previo": "NC", "estado_nuevo": "NA", "motivo": "falla",
+                "duration_h": round(float(rng.uniform(1.0, 6.0)), 2),
+                "affected_kw": round(avg_load_kw * float(rng.uniform(0.05, 0.20)), 2),
+            })
+        return pd.DataFrame(rows)
 
     def _network(self, rng, fid, sites, customers, poles):
         """Red radial: tramos primarios (árbol), transformador (arista implícita

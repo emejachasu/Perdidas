@@ -2,7 +2,8 @@
 from .graph import FeederGraph
 from .zones import build_protection_zones
 from .quality import run_quality_rules
-from .dynamic import infer_transfers, reconstruct_topology_versions
+from .dynamic import (infer_transfers, reconstruct_topology_versions,
+                      estimate_ens_kwh, quantify_transfers)
 
 __all__ = [
     "FeederGraph",
@@ -10,4 +11,6 @@ __all__ = [
     "run_quality_rules",
     "infer_transfers",
     "reconstruct_topology_versions",
+    "estimate_ens_kwh",
+    "quantify_transfers",
 ]

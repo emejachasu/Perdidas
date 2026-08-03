@@ -43,13 +43,49 @@ def run(
     root: str = typer.Option(None, help="Raíz del lakehouse."),
     force: bool = typer.Option(False, help="Reprocesar aunque el hash no haya cambiado."),
     workers: int = typer.Option(None, help="Procesos paralelos (default: núcleos-1)."),
+    level: str = typer.Option("full", help="'full' (todas las fases) o 'n1' (tamizaje rápido)."),
 ) -> None:
     """Ejecuta el pipeline por alimentador (incremental por hash)."""
     from .pipeline.runner import run as run_pipeline
 
     root = root or _default_root()
-    result = run_pipeline(root, force=force, workers=workers)
+    result = run_pipeline(root, force=force, workers=workers, level=level)
     typer.echo(json.dumps(result, indent=2))
+
+
+@app.command()
+def bench(
+    feeders: int = typer.Option(24, help="Nº de alimentadores sintéticos a generar."),
+    level: str = typer.Option("n1", help="Nivel del pipeline: 'n1' (tamizaje) o 'full'."),
+    root: str = typer.Option(None, help="Raíz del lakehouse (temporal por defecto)."),
+    target: int = typer.Option(960, help="Nº de alimentadores objetivo para extrapolar."),
+) -> None:
+    """Prueba de escala (§2.1, §19.8): genera N alimentadores, corre el pipeline
+    y extrapola el tiempo a la volumetría objetivo."""
+    import tempfile, time as _t
+
+    from .config import load_config
+    from .pipeline.runner import run as run_pipeline
+    from .synth import generate_universe
+
+    cfg = load_config()
+    cfg._scale["profiles"][cfg.active_profile_name]["feeders"] = feeders
+    root = root or tempfile.mkdtemp(prefix="lossan_bench_")
+    t0 = _t.perf_counter()
+    counts = generate_universe(root, cfg)
+    t_gen = _t.perf_counter() - t0
+    res = run_pipeline(root, force=True, level=level, cfg=cfg)
+    per_feeder = res["elapsed_s"] / max(1, feeders)
+    workers = max(1, (os.cpu_count() or 2) - 1)
+    extrap_h = per_feeder * target / 3600.0
+    out = {
+        "feeders": feeders, "level": level, "counts": counts,
+        "gen_s": round(t_gen, 2), "run_s": res["elapsed_s"],
+        "s_per_feeder": round(per_feeder, 3), "workers": workers,
+        f"extrapolado_{target}_h": round(extrap_h, 2),
+        "objetivo_8h": extrap_h <= 8.0,
+    }
+    typer.echo(json.dumps(out, indent=2, ensure_ascii=False))
 
 
 @app.command()

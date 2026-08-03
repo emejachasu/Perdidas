@@ -15,13 +15,17 @@ from .balance import analyze_feeder
 
 
 def analyze_feeder_full(tables: dict[str, pd.DataFrame],
-                        cfg: Config | None = None) -> tuple[dict[str, pd.DataFrame], set[str]]:
+                        cfg: Config | None = None,
+                        level: str = "full") -> tuple[dict[str, pd.DataFrame], set[str]]:
     """Ejecuta F2+F3/F5+F4+F6+F7 sobre un alimentador.
 
     Devuelve ``(tablas_gold, fases_completadas)``. Cada bloque avanzado es
     tolerante a fallos: un error en un módulo no impide entregar el resto.
+    ``level='n1'`` ejecuta solo topología + balance (tamizaje masivo, §2.4);
+    'full' ejecuta además flujo de potencia, estimación de estado y ML.
     """
     cfg = cfg or load_config()
+    heavy = level != "n1"
     fid = tables["header_meters"]["feeder_id"].iloc[0]
     gold: dict[str, pd.DataFrame] = {}
     stages: set[str] = {"ingest"}
@@ -82,7 +86,7 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
             logger.warning(f"[{fid}] topología falló: {e}")
 
     # --- F4: flujo de potencia primario (motor propio) ---
-    if fg is not None and load_map:
+    if heavy and fg is not None and load_map:
         try:
             from ..powerflow import network_from_feeder, solve_bfs
             v_ll = float(cfg.electrical["voltage"]["ll_mv"])
@@ -99,7 +103,7 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
             logger.warning(f"[{fid}] flujo de potencia falló: {e}")
 
     # --- F6: estimación de estado / ramales sin medición (§14.3) ---
-    if fg is not None and consumption is not None and customers is not None and sites is not None:
+    if heavy and fg is not None and consumption is not None and customers is not None and sites is not None:
         try:
             from ..stateest import pseudo_measurements, reconcile_by_zone, run_wls
             merged = consumption.merge(
@@ -128,7 +132,7 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
             logger.warning(f"[{fid}] estimación de estado falló: {e}")
 
     # --- F7: score de riesgo (PU + no supervisado + SHAP) ---
-    if consumption is not None and customers is not None:
+    if heavy and consumption is not None and customers is not None:
         try:
             from ..ml import train_risk_model
             scores, info = train_risk_model(consumption, customers,

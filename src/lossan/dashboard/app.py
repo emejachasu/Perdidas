@@ -60,6 +60,7 @@ def load_gold(root: str) -> dict[str, pd.DataFrame]:
         "summary": lake.read_entity("gold", "campaign_summary"),
         "curve": lake.read_entity("gold", "allocation_curve"),
         "rank_sites": lake.read_entity("gold", "ranking_sites"),
+        "recon_causes": lake.read_entity("gold", "pq_reconciliation_causes"),
     }
 
 
@@ -242,6 +243,17 @@ def main() -> None:
                       "loadability", "loadability_class", "bank_quality_flags"]]
                 .sort_values("loadability", ascending=False),
                 use_container_width=True, hide_index=True, height=300)
+        rc = _filt(data["recon_causes"], fid)
+        if not rc.empty:
+            st.markdown("**Reconciliación de P y Q — impacto del cálculo actual por causa (§9.3)**")
+            figr = px.bar(rc, x="pct", y="cause", orientation="h", color="unit",
+                          hover_data=["corrected", "current", "delta"],
+                          labels={"pct": "desviación del cálculo actual (%)", "cause": ""})
+            figr.update_layout(height=260, template="plotly_dark",
+                               margin=dict(l=10, r=10, t=10, b=10))
+            st.plotly_chart(figr, use_container_width=True)
+            st.caption("Diferencia del cálculo actual (presunto erróneo, §9.1) vs. el "
+                       "corregido (§9.2): coincidencia, energía-vs-demanda, cosφ y factor √3.")
 
     with tab_topo:
         if not topo.empty:

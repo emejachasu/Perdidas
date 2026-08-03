@@ -57,6 +57,10 @@ lossan run
 # 3) Ver el avance en consola
 lossan status
 
+# Tamizaje masivo rápido (sin fases pesadas) y prueba de escala:
+lossan run --level n1
+lossan bench --feeders 24 --target 960
+
 # 4) Abrir el dashboard web por alimentador
 lossan dashboard        # http://localhost:8501
 ```
