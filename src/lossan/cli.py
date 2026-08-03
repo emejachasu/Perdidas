@@ -203,6 +203,18 @@ def ingest_header_cmd(
     typer.echo(json.dumps(ingest_header(path, root, fmap), indent=2))
 
 
+@app.command("data-templates")
+def data_templates(
+    out: str = typer.Option("export/plantillas", help="Carpeta de salida."),
+) -> None:
+    """Genera plantillas vacías (CSV + Excel) por cada dato requerido, para que
+    los equipos de SIG/Comercial/Operación las llenen."""
+    from .io import build_templates
+
+    res = build_templates(out)
+    typer.echo(json.dumps(res, indent=2, ensure_ascii=False))
+
+
 @app.command("feeder-report")
 def feeder_report(
     feeder: str = typer.Argument(..., help="Id de alimentador (ej. F0000)."),

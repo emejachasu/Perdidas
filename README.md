@@ -86,7 +86,11 @@ Lectura/escritura de FGDB con GDAL/OpenFileGDB (**sin `arcpy`**, §2.5).
 **[Windows paso a paso](docs/WINDOWS.md)** · **[Calibración](docs/TUNING.md)**
 
 **Ejemplo de calibración:** `python examples/calibrate.py --root data/lake --feeder F0000`
+o el notebook con gráficos `examples/calibrate.ipynb`
 (mide Precision@k contra la verdad-terreno, compara métodos PU y barre umbrales).
+
+**Plantillas de datos vacías** (CSV + Excel con diccionario) para que los
+equipos las llenen: `lossan data-templates --out export/plantillas`.
 
 ## Pruebas
 

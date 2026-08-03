@@ -45,3 +45,16 @@ def test_export_sample_roundtrip_gpkg(micro_config, tmp_path):
     res = export_sample(lake_root, str(out), fmt="gpkg", feeders=["F0000"])
     assert "poles" in res["gis_layers"]
     assert (out / "csv" / "consumption.csv").exists()
+
+
+def test_build_templates(tmp_path):
+    from lossan.io import build_templates, TEMPLATES
+    res = build_templates(str(tmp_path / "plantillas"))
+    assert set(res["entities"]) == set(TEMPLATES.keys())
+    # CSV con encabezados canónicos, sin filas
+    import pandas as pd
+    df = pd.read_csv(tmp_path / "plantillas" / "csv" / "consumption.csv")
+    assert list(df.columns) == ["customer_unit_id", "feeder_id", "year_month",
+                                "kwh", "kvarh", "estimated"]
+    assert len(df) == 0
+    assert (tmp_path / "plantillas" / "plantillas_datos.xlsx").exists()
