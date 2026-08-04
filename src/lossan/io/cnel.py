@@ -128,6 +128,43 @@ def _rename(df: pd.DataFrame, fields: dict) -> pd.DataFrame:
     return out
 
 
+def _endpoint_id(pt, precision: int = 1) -> str | None:
+    if pt is None:
+        return None
+    return f"{round(pt[0], precision)}_{round(pt[1], precision)}"
+
+
+def _line_coords(geom):
+    """Extrae (primer punto, último punto) de una LineString o MultiLineString."""
+    if geom is None or geom.is_empty:
+        return None, None
+    if geom.geom_type == "MultiLineString":
+        parts = list(geom.geoms)
+        if not parts:
+            return None, None
+        return parts[0].coords[0], parts[-1].coords[-1]
+    if hasattr(geom, "coords"):
+        coords = list(geom.coords)
+        if not coords:
+            return None, None
+        return coords[0], coords[-1]
+    return None, None
+
+
+def _line_endpoints(geoseries) -> tuple[list, list]:
+    """node_from/node_to por snapping de coordenadas de los extremos de línea.
+
+    No hay node_from/node_to explícitos en la GDB de CNEL; los tramos que
+    comparten un extremo físico (misma coordenada) quedan conectados.
+    """
+    froms, tos = [], []
+    for geom in geoseries:
+        a, b = _line_coords(geom)
+        froms.append(_endpoint_id(a))
+        tos.append(_endpoint_id(b))
+    return froms, tos
+
+
 def build_canonical(layers: dict[str, pd.DataFrame], mapping: dict,
                     feeder_id: str | None = None) -> dict[str, pd.DataFrame]:
     """Convierte las capas crudas de CNEL al modelo canónico.
@@ -256,6 +293,31 @@ def build_canonical(layers: dict[str, pd.DataFrame], mapping: dict,
             cust["tariff_class"] = tdefault
         out["customers"] = cust
 
+    # --- tramos (segmentos de red aéreo + subterráneo) ---
+    seg_spec = lmap.get("segments")
+    if seg_spec:
+        frames = []
+        for lyr in seg_spec.get("layers", []):
+            raw = layers.get(lyr)
+            if raw is None or raw.empty:
+                continue
+            df = _rename(raw, seg_spec["fields"])
+            df["feeder_id"] = (raw[ff].astype(str) if ff in raw.columns
+                               else (feeder_id or "UNKNOWN"))
+            if "phase_raw" in df:
+                df["phase"] = df["phase_raw"].map(lambda v: decode_phase(v, phase_dom))
+                df = df.drop(columns=["phase_raw"])
+            if "length_field" in df:
+                df["length_m"] = pd.to_numeric(df["length_field"], errors="coerce")
+                df = df.drop(columns=["length_field"])
+            geom = getattr(raw, "geometry", None)
+            if geom is not None:
+                fr, to = _line_endpoints(raw.geometry)
+                df["node_from"], df["node_to"] = fr, to
+            frames.append(df)
+        if frames:
+            out["segments"] = pd.concat(frames, ignore_index=True)
+
     # --- luminarias y dispositivos ---
     for name in ("streetlights", "switching_devices"):
         df = get(name)
@@ -303,6 +365,8 @@ def ingest_cnel_fgdb(path: str, root: str, mapping: dict | None = None,
 
     mapping = mapping or load_cnel_mapping()
     needed = {spec["layer"] for spec in mapping["layers"].values() if "layer" in spec}
+    for spec in mapping["layers"].values():
+        needed.update(spec.get("layers", []))
     layers: dict[str, pd.DataFrame] = {}
     for name in sorted(needed):
         try:
