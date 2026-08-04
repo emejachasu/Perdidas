@@ -202,38 +202,125 @@ domains:
     7: ABC
 
   # 'Config Lado Baja Banco Transf' -> configuración de banco (§5.2).
+  # VERIFICADO contra el dominio real de la GDB con
+  # `ogrinfo <gdb> -fielddomain "Config Lado Baja Banco Transf"` (no es el
+  # estándar ArcFM genérico: CNEL usa códigos cortos propios).
   # Las claves se comparan en mayúsculas y sin espacios.
   bank_config:
+    L: single            # Linea Monofasica
+    Y: wye_closed         # Estrella
+    YA: open_wye_open_delta  # Estrella Abierta (banco de 2 unidades) — VERIFICAR con campo
+    DE: delta_closed      # Delta
+    DT: delta_4wire        # Delta Aterrado (delta 4 hilos con neutro)
+    D: open_delta          # Delta Abierta
+    # equivalentes largos por si otra capa trae el texto en vez del código:
     MONOFASICO: single
     MONOFASICA: single
     SIMPLE: single
     ESTRELLA: wye_closed
     ESTRELLACERRADA: wye_closed
-    YCERRADA: wye_closed
     DELTA: delta_closed
-    DELTACERRADA: delta_closed
+    DELTAATERRADO: delta_4wire
     DELTAABIERTA: open_delta
-    VV: open_delta
-    ESTRELLAABIERTADELTAABIERTA: open_wye_open_delta
-    YABIERTADELTAABIERTA: open_wye_open_delta
-    DELTA4HILOS: delta_4wire
+    ESTRELLAABIERTA: open_wye_open_delta
     INDEPENDIENTE: independent
 
   # Estado de la conexión consumidor que cuenta como servicio activo.
   active_status_values: [1, "1", "ACTIVO", "A"]
 
-  # 'TipoTarifaCIS' -> clase tarifaria canónica. Las claves se comparan en
-  # mayúsculas sin espacios; los prefijos permiten variantes (RESIDENCIAL-A...).
+  # 'TipoTarifaCIS' -> clase tarifaria canónica. VERIFICADO contra el dominio
+  # real de la GDB (`ogrinfo <gdb> -fielddomain TipoTarifaCIS`): CNEL usa
+  # códigos alfanuméricos propios (p. ej. BTCRSD01O), no los nombres largos
+  # genéricos de ArcFM. Clasificado por palabra clave en la descripción del
+  # dominio (RESIDENCIAL/COMERCIAL/INDUSTRIAL/ALUMBRADO); el resto de
+  # categorías (bombeo, entidades oficiales, asistencia social, etc.) cae en
+  # 'commercial' como catch-all no residencial.
   tariff_class:
-    RESIDENCIAL: residential
-    RESIDENCIALTEMPORAL: residential
-    COMERCIAL: commercial
-    COMERCIALOTROS: commercial
-    INDUSTRIAL: industrial
-    INDUSTRIALARTESANAL: industrial
-    ALUMBRADOPUBLICO: streetlight_led
-    OTROS: commercial
-  tariff_class_default: residential
+    ATCGCD03O: commercial   # AT Abonados Especiales con Dem Hor PO
+    ATCGCD04O: commercial   # AT Bombeo de Agua con Dem Horaria PO
+    ATCGCD07O: industrial   # AT Industrial con Dem Hor Dif PO
+    ATCGCD08O: commercial   # AT Servicio Comunitario con Dem Hor PO
+    ATCGCD09O: commercial   # AT Comercial con Demanda Horaria PO
+    ATCGCD10O: commercial   # AT Entidades Oficiales con Dem Hor PO
+    ATCGCD11O: commercial   # AT Escenarios Deportivos con Dem Hor PO
+    ATCGCD12O: commercial   # AT Autoconsumo con Demanda Horaria PO
+    ATCGCD13O: commercial   # AT Bombeo de agua S.P. agua pot. dem hor
+    ATPDIS01O: commercial   # AT Peajes de distribución
+    BTAPCD01O: streetlight_led   # BT Alumbrado Público
+    BTCGCD01O: commercial   # BT Comercial con Demanda PO
+    BTCGCD02O: industrial   # BT Industrial con Demanda PO
+    BTCGCD03O: commercial   # BT Asistencia Social con Demanda PO
+    BTCGCD04O: commercial   # BT Autoconsumos con Demanda PO
+    BTCGCD05O: commercial   # BT Beneficio Público con Demanda PO
+    BTCGCD06O: commercial   # BT Bombeo de Agua con Demanda PO
+    BTCGCD07O: commercial   # BT Entidades Oficiales con Demanda PO
+    BTCGCD08O: commercial   # BT Escenarios Deportivos con Demanda PO
+    BTCGCD11O: commercial   # BT Servicio Comunitario con Demanda PO
+    BTCGCD20O: commercial   # BT Beneficio Público con Dem Horaria PO
+    BTCGCD21O: commercial   # BT Bombeo de Agua Comu Campesinas Dem PO
+    BTCGCD30O: industrial   # BT Industrial con Demanda Horaria PO
+    BTCGCD31O: commercial   # BT Comercial con Demanda Horaria PO
+    BTCGCD32O: commercial   # BT Culto Religioso con Demanda PO
+    BTCGCD34O: commercial   # BT Bombeo de Agua con Dem Horaria PO
+    BTCGCD35O: commercial   # BT Entidades Oficiales con Dem Hor PO
+    BTCGCD36O: commercial   # BT Escenarios Deportivos con Dem Hor PO
+    BTCGCD37O: commercial   # BT Autoconsumo con Demana Horaria PO
+    BTCGCD39O: commercial   # BT Servicio Comunitario con Dem Hor PO
+    BTCGCD40O: commercial   # BT Bombeo de agua S.P. agua pot. dem hor
+    BTCGSD01O: commercial   # BT Comercial PO
+    BTCGSD01P: commercial   # BT Comercial PR
+    BTCGSD02O: industrial   # BT Industrial Artesanal PO
+    BTCGSD03O: commercial   # BT Asistencia Social PO
+    BTCGSD03P: commercial   # BT Asistencia Social PR
+    BTCGSD04O: commercial   # BT Beneficio Público PO
+    BTCGSD04P: commercial   # BT Beneficio Público PR
+    BTCGSD05O: commercial   # BT Entidades Oficiales PO
+    BTCGSD06O: commercial   # BT Abonados Especiales con Demanda PO
+    BTCGSD09O: commercial   # BT Culto Religioso PO
+    BTCGSD09P: commercial   # BT Culto Religioso PR
+    BTCGSD10O: commercial   # BT Abonados Especiales con Dem Hor PO
+    BTCGSD11O: commercial   # BT Servicio Comunitario PO
+    BTCGSD11P: commercial   # BT Servicio Comunitario PR
+    BTCGSD12O: commercial   # BT Escenarios Deportivos PO
+    BTCGSD12P: commercial   # BT Escenarios Deportivos PR
+    BTCGSD13O: commercial   # BT Bombeo de Agua PO
+    BTCGSD13P: commercial   # BT Bombeo de Agua PR
+    BTCGSD14O: commercial   # BT Bombeo de agua S.P. agua potable
+    BTCRSD01F: residential   # BT Residencial
+    BTCRSD01O: residential   # BT Residencial PO
+    BTCRSD01P: residential   # BT Residencial PR
+    BTCRSD02O: residential   # BT Residencial Temporal PO
+    BTCRSD03O: residential   # BT Residencial para el Programa PEC PO
+    DUMMY: commercial   # Tipo de tarifa DUMMY
+    MTCGCD01O: commercial   # MT Comercial con Demanda PO
+    MTCGCD02O: commercial   # MT Comercial con Demanda Horaria PO
+    MTCGCD03O: industrial   # MT Industrial con Demanda PO
+    MTCGCD05O: commercial   # MT Abonados Especiales con Demanda PO
+    MTCGCD06O: commercial   # MT Abonados Especiales con Dem Hor PO
+    MTCGCD07O: commercial   # MT Asistencia Social con Demanda PO
+    MTCGCD08O: commercial   # MT Asistencia Social con Dem Horaria PO
+    MTCGCD09O: commercial   # MT Beneficio Público con Demanda PO
+    MTCGCD10O: commercial   # MT Beneficio Público con Dem Horaria PO
+    MTCGCD11O: commercial   # MT Bombeo de Agua con Demanda PO
+    MTCGCD12O: commercial   # MT Bombeo de Agua con Demanda Horaria PO
+    MTCGCD13O: commercial   # MT Entidades Oficiales Con Demanda PO
+    MTCGCD14O: commercial   # MT Entidades Oficiales Con Dem Hor PO
+    MTCGCD15O: commercial   # MT Escenarios Deportivos con Demanda PO
+    MTCGCD16O: commercial   # MT Escenarios Deportivos con Dem Hor PO
+    MTCGCD30O: commercial   # MT Bombeo de Agua Comu Campesinas Dem PO
+    MTCGCD31O: commercial   # Peajes de distribución PO
+    MTCGCD32O: industrial   # MT Industrial con Dem Hor Dif PO
+    MTCGCD33O: commercial   # MT Culto Religioso con Demanda PO
+    MTCGCD34O: commercial   # MT Servicio Comunitario con Dem Hor PO
+    MTCGCD35O: commercial   # MT Servicio Comunitario con Demanda PO
+    MTCGCD36O: commercial   # MT Autoconsumo con Demanda Horaria PO
+    MTCGCD37O: commercial   # MT Autoconsumo con Demanda PO
+    MTCGCD39O: commercial   # MT Bombeo de agua S.P. agua pot. dem hor
+    MTCRSD03O: residential   # MT Categoria Residencial PO
+    MTCRSD03P: residential   # MT Categoría Residencial PR
+    MTCRSD04O: residential   # MT Categoria Residencial Temporal PO
+    NDCGCD01O: commercial   # BT  Asistencia Social con Dem Horaria PO
+  tariff_class_default: commercial
 
 # --- Cruce con el sistema comercial (consumo histórico) -------------------
 # CUENTACONTRATO y CODIGOUNICO son los identificadores únicos. El histórico de
