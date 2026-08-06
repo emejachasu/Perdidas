@@ -32,7 +32,9 @@ def reconcile_feeder(consumption: pd.DataFrame, customers: pd.DataFrame,
 
     # energía mensual media por cliente y su clase
     e_month = consumption.groupby("customer_unit_id")["kwh"].mean()
-    cust = customers.set_index("customer_unit_id")
+    # customer_unit_id debería ser único (CODIGOUNICO); un puñado de
+    # duplicados por doble captura en el SIG no debe tumbar el reporte.
+    cust = customers.drop_duplicates(subset=["customer_unit_id"]).set_index("customer_unit_id")
     df = pd.DataFrame({"e_month": e_month})
     df["tariff_class"] = cust["tariff_class"].reindex(df.index).fillna("residential")
 

@@ -186,7 +186,7 @@ layers:
       segment_id: GLOBALID
       conductor_code: CODIGOCONDUCTORFASE
       neutral_code: CODIGOCONDUCTORNEUTRO
-      voltage_v: VOLTAJE
+      voltage_ll: VOLTAJE
       phase_raw: FASECONEXION
       length_field: LONGITUDSISTEMA
       parent_circuit_guid: PARENTCIRCUITSOURCEGUID
