@@ -14,7 +14,9 @@ from ..config import Config, load_config
 from ..domain.bank import UnitPlate, bank_capacity, validate_bank_config
 from ..domain.enums import BankConfig, LoadabilityClass
 from ..electrical import formulas as F
-from .technical import secondary_conductor_loss_kwh, transformer_site_energy_loss_kwh
+from .technical import (attach_conductor_impedance, secondary_conductor_loss_by_site_kwh,
+                        secondary_conductor_loss_kwh, secondary_network_by_site,
+                        transformer_site_energy_loss_kwh)
 
 
 
@@ -76,6 +78,12 @@ def analyze_feeder(tables: dict[str, pd.DataFrame], cfg: Config | None = None,
     units = tables["transformer_units"]
     customers = tables["customers"]
     streetlights = tables["streetlights"]
+    segments = tables.get("segments")
+    if segments is not None and not segments.empty:
+        segments = attach_conductor_impedance(segments, cfg)
+    r_eq_by_site = secondary_network_by_site(segments) if segments is not None else {}
+    v_ll_lv = float(cfg.electrical["voltage"]["ll_lv"])          # trifásico BT
+    v_split_lv = float(cfg.electrical["voltage"]["split_240"])   # monofásico BT (acometida 2 hilos)
 
     n_months = header.shape[0]
     hours_month = float(cfg.electrical["hours_per_month"])
@@ -121,7 +129,7 @@ def analyze_feeder(tables: dict[str, pd.DataFrame], cfg: Config | None = None,
     # carga, se cae al estimador por energía media del puesto.
     smax_by_site = _site_smax_from_load_points(tables, cfg)
 
-    load_rows, energy_technical = [], 0.0
+    load_rows, energy_technical, energy_lv_real_kwh = [], 0.0, 0.0
     units_by_site = {sid: g for sid, g in units.groupby("site_id")}
     for _, s in sites.iterrows():
         sid = s["site_id"]
@@ -143,6 +151,19 @@ def analyze_feeder(tables: dict[str, pd.DataFrame], cfg: Config | None = None,
         else:
             s_max = (p_mean / fc) / site_pf if p_mean > 0 else 0.0
         loss = transformer_site_energy_loss_kwh(plates, s_max, cap, fp, hours_period)
+
+        # Pérdidas de red BT (§F4 simplificado): I²R real con la topología del
+        # puesto cuando hay tramos BT enlazados (ArcFM, ~100% de cobertura en
+        # CNEL); si no, se cubre con el % fijo de config (fallback abajo).
+        r_eq = r_eq_by_site.get(s.get("node_id"))
+        lv_loss = 0.0
+        if r_eq:
+            three_phase = cfg_bank != BankConfig.SINGLE
+            v_lv = v_ll_lv if three_phase else v_split_lv
+            lv_loss = secondary_conductor_loss_by_site_kwh(
+                r_eq, s_max, v_lv, three_phase, fp, hours_period)
+            energy_lv_real_kwh += site_energy
+        loss += lv_loss
         energy_technical += loss
         ratio = s_max / cap if cap > 0 else 0.0
         load_rows.append({
@@ -153,11 +174,16 @@ def analyze_feeder(tables: dict[str, pd.DataFrame], cfg: Config | None = None,
             "loadability_class": _classify_loadability(ratio, th_load),
             "single_phase_headroom_kva": round(headroom, 2),
             "energy_technical_kwh": round(loss, 1),
+            "secondary_loss_kwh": round(lv_loss, 1),
+            "secondary_loss_source": "topology" if r_eq else "flat_pct",
             "bank_quality_flags": ",".join(validate_bank_config(cfg_bank, plates)),
         })
+    # Fallback por % fijo SOLO para la energía que no quedó cubierta por
+    # topología BT real (puestos sin tramos BT enlazados, o clientes sin
+    # puesto identificado): evita duplicar la pérdida ya calculada por I²R.
+    energy_without_lv = max(0.0, energy_billed + energy_streetlight - energy_lv_real_kwh)
     energy_technical += secondary_conductor_loss_kwh(
-        energy_billed + energy_streetlight,
-        float(cfg.electrical["secondary_loss_frac"]), fp)
+        energy_without_lv, float(cfg.electrical["secondary_loss_frac"]), fp)
 
     # --- Balance jerárquico (§13) ---
     # ENS (§7.6): energía no suministrada por fallas; no es pérdida.
