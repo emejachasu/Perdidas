@@ -58,16 +58,23 @@ def _write(html: str, out_path: str | Path, pdf: bool) -> Path:
 _EXEC_TMPL = Template("""
 <!doctype html><html><head><meta charset="utf-8"><style>{{css}}</style></head><body>
 <h1>Reporte ejecutivo — Alimentador {{fid}}</h1>
-<div class="sub">Análisis de pérdidas técnicas y no técnicas</div>
+<div class="sub">Análisis de pérdidas técnicas y no técnicas · periodo: {{n_months}} mes(es) · balance {{balance_icon}}</div>
 <div class="kpis">
-  <div class="kpi"><div class="v">{{header_gwh}}</div><div class="l">Energía cabecera (GWh)</div></div>
-  <div class="kpi"><div class="v">{{pnt_pct}}%</div><div class="l">Pérdidas no técnicas</div></div>
-  <div class="kpi"><div class="v">{{tech_pct}}%</div><div class="l">Pérdidas técnicas</div></div>
+  <div class="kpi"><div class="v">{{header_mwh}}</div><div class="l">Cabecera (MWh)</div></div>
+  <div class="kpi"><div class="v">{{billed_mwh}}</div><div class="l">Facturado clientes (MWh)</div></div>
+  <div class="kpi"><div class="v">{{ap_mwh}}</div><div class="l">Alumbrado público (MWh)</div></div>
+  <div class="kpi"><div class="v">{{tech_mwh}}</div><div class="l">Técnicas (MWh)</div></div>
+  <div class="kpi"><div class="v">{{pnt_mwh}}</div><div class="l">PNT (MWh)</div></div>
+</div>
+<div class="kpis">
+  <div class="kpi"><div class="v">{{pnt_pct}}%</div><div class="l">Pérdidas no técnicas (% cabecera)</div></div>
+  <div class="kpi"><div class="v">{{tech_pct}}%</div><div class="l">Pérdidas técnicas (% cabecera)</div></div>
   <div class="kpi"><div class="v">{{n_over}}</div><div class="l">Puestos sobrecargados</div></div>
 </div>
 <img src="{{chart}}"/>
 <h3>Puestos de mayor cargabilidad</h3>{{sites_tbl}}
 <h3>Clientes de mayor riesgo de hurto</h3>{{risk_tbl}}
+{{glosario}}
 <div class="foot">Generado por lossan · §18</div>
 </body></html>""")
 
@@ -103,23 +110,59 @@ def executive_report(root: str, feeder_id: str, out_path: str, pdf: bool = True)
         risk_tbl = risk.sort_values("risk_score", ascending=False)[cols].head(10).to_html(index=False)
 
     html = _EXEC_TMPL.render(
-        css=_CSS, fid=feeder_id, header_gwh=f"{b['energy_header_kwh']/1e6:.2f}",
+        css=_CSS, fid=feeder_id,
+        n_months=int(b.get("n_months", 0)),
+        balance_icon="✅ cierra" if b.get("balance_coherent") else "❌ no cierra",
+        header_mwh=f"{b['energy_header_kwh']/1000:,.1f}",
+        billed_mwh=f"{b['energy_billed_kwh']/1000:,.1f}",
+        ap_mwh=f"{b['energy_streetlight_kwh']/1000:,.1f}",
+        tech_mwh=f"{b['energy_technical_kwh']/1000:,.1f}",
+        pnt_mwh=f"{b['pnt_kwh']/1000:,.1f}",
         pnt_pct=f"{b['pnt_pct']:.2f}", tech_pct=f"{b['technical_pct']:.2f}",
-        n_over=n_over, chart=_fig_b64(fig), sites_tbl=sites_tbl, risk_tbl=risk_tbl)
+        n_over=n_over, chart=_fig_b64(fig), sites_tbl=sites_tbl, risk_tbl=risk_tbl,
+        glosario=_GLOSARIO)
     return _write(html, out_path, pdf)
 
+
+_GLOSARIO = """
+<h3>Cómo leer este reporte</h3>
+<table>
+<tr><th>Término</th><th>Qué significa</th></tr>
+<tr><td><b>Energía de cabecera</b></td><td>Energía medida en el medidor de cabecera del alimentador (lo que "entra" a la red). Es el punto de partida del balance.</td></tr>
+<tr><td><b>Energía facturada (clientes)</b></td><td>Suma del consumo registrado por los medidores de los clientes del sistema comercial, SOLO de los meses que coinciden con la cabecera (no se mezcla con histórico de otros periodos).</td></tr>
+<tr><td><b>Alumbrado público (AP)</b></td><td>Energía que consume el alumbrado público — se conoce (por inventario de luminarias) pero normalmente NO se factura a un cliente, así que se resta aparte para no contarla como pérdida.</td></tr>
+<tr><td><b>Pérdidas técnicas</b></td><td>Energía que se disipa físicamente en la red (calor en conductores y transformadores) por su propia naturaleza eléctrica — I²R en conductores, pérdidas de vacío y de carga en transformadores. Se calculan con la física real de la red (calibre de conductor, longitud, potencia de transformador), no se miden directamente.</td></tr>
+<tr><td><b>PNT (Pérdidas No Técnicas)</b></td><td>Todo lo que NO se explica por facturación + AP + pérdidas técnicas. Es un residuo contable: <code>PNT = Cabecera − Facturado − AP − Técnicas</code>. Agrupa hurto de energía, errores de medición, fraude, y también <u>errores de datos</u> (topología mal armada, clientes mal asignados a su alimentador, etc.) — un PNT extremo (muy alto o negativo) es indicio de esto último, no necesariamente de hurto.</td></tr>
+<tr><td><b>PNT negativo</b></td><td>Significa que lo facturado + AP + técnicas ya supera la cabecera del mismo periodo. Físicamente no debería pasar — casi siempre delata un problema de datos: clientes asociados al alimentador equivocado, cuentas duplicadas, o error en la medición de cabecera. Se prioriza para inspección/depuración de datos antes que para hurto.</td></tr>
+<tr><td><b>Balance cerrado</b></td><td>El alimentador pasó las 5 validaciones internas de coherencia (PNT no negativo, todo dentro de cabecera, pérdidas totales y técnicas en rango plausible, cabecera positiva). Si no cierra, el resultado de ESE alimentador es sospechoso y no debe tomarse como definitivo.</td></tr>
+</table>
+"""
 
 _CONS_TMPL = Template("""
 <!doctype html><html><head><meta charset="utf-8"><style>{{css}}</style></head><body>
 <h1>Reporte consolidado regional</h1>
-<div class="sub">{{n}} alimentadores</div>
+<div class="sub">{{n}} alimentadores · periodo: {{n_months}} mes(es) de cabecera</div>
 <div class="kpis">
-  <div class="kpi"><div class="v">{{pnt}}%</div><div class="l">PNT global</div></div>
-  <div class="kpi"><div class="v">{{tech}}%</div><div class="l">Técnicas global</div></div>
+  <div class="kpi"><div class="v">{{header_mwh}}</div><div class="l">Cabecera (MWh)</div></div>
+  <div class="kpi"><div class="v">{{billed_mwh}}</div><div class="l">Facturado clientes (MWh)</div></div>
+  <div class="kpi"><div class="v">{{ap_mwh}}</div><div class="l">Alumbrado público (MWh)</div></div>
+  <div class="kpi"><div class="v">{{tech_mwh}}</div><div class="l">Pérdidas técnicas (MWh)</div></div>
+  <div class="kpi"><div class="v">{{pnt_mwh}}</div><div class="l">PNT (MWh)</div></div>
+</div>
+<div class="kpis">
+  <div class="kpi"><div class="v">{{pnt}}%</div><div class="l">PNT global (% cabecera)</div></div>
+  <div class="kpi"><div class="v">{{tech}}%</div><div class="l">Técnicas global (% cabecera)</div></div>
   <div class="kpi"><div class="v">{{closed}}/{{n}}</div><div class="l">Balances cerrados</div></div>
 </div>
 <img src="{{chart}}"/>
-<h3>Alimentadores por PNT</h3>{{tbl}}
+
+<h3>⚠ Top 10 alimentadores prioritarios (mayor sospecha de error de datos/topología o pérdida)</h3>
+<p style="color:#64748b;font-size:13px">Ordenado por |PNT| descendente. Los que NO cierran balance (❌) son los candidatos más fuertes a revisión de topología/asignación de clientes antes que a campaña de hurto.</p>
+{{top10_tbl}}
+
+{{glosario}}
+
+<h3>Todos los alimentadores (MWh y %)</h3>{{tbl}}
 <div class="foot">Generado por lossan · §18</div></body></html>""")
 
 
@@ -134,6 +177,7 @@ def consolidated_report(root: str, out_path: str, pdf: bool = True) -> Path:
     pnt = 100 * bal["pnt_kwh"].sum() / tot_h
     tech = 100 * bal["energy_technical_kwh"].sum() / tot_h
     closed = int(status["balance_closed"].sum()) if not status.empty else 0
+    n_months = int(bal["n_months"].iloc[0]) if "n_months" in bal.columns and len(bal) else 0
 
     fig, ax = plt.subplots(figsize=(8, 3))
     b = bal.sort_values("feeder_id")
@@ -141,11 +185,55 @@ def consolidated_report(root: str, out_path: str, pdf: bool = True) -> Path:
     ax.bar(b["feeder_id"], b["pnt_pct"], bottom=b["technical_pct"], label="PNT", color="#ef4444")
     ax.set_ylabel("% cabecera"); ax.legend(); ax.tick_params(axis="x", rotation=90)
 
-    tbl = (bal.sort_values("pnt_pct", ascending=False)
-           [["feeder_id", "pnt_pct", "technical_pct", "total_losses_pct", "n_customers"]]
-           .to_html(index=False))
-    html = _CONS_TMPL.render(css=_CSS, n=len(bal), pnt=f"{pnt:.2f}", tech=f"{tech:.2f}",
-                             closed=closed, chart=_fig_b64(fig), tbl=tbl)
+    # --- Top 10 prioritarios: |PNT| desc, con motivo explícito ---
+    ranked = bal.copy()
+    ranked["abs_pnt_pct"] = ranked["pnt_pct"].abs()
+    if not status.empty:
+        ranked = ranked.drop(columns=["failed_checks"], errors="ignore").merge(
+            status[["feeder_id", "balance_closed", "failed_checks"]],
+            on="feeder_id", how="left")
+    else:
+        ranked["balance_closed"], ranked["failed_checks"] = True, ""
+    ranked = ranked.sort_values("abs_pnt_pct", ascending=False).head(10)
+    ranked["Balance"] = ranked["balance_closed"].map({True: "✅", False: "❌"})
+    ranked["Motivo"] = ranked.apply(
+        lambda r: (f"No cierra: {r['failed_checks']}" if not r["balance_closed"]
+                   else ("PNT muy alto — posible hurto, pero verificar AP/topología primero"
+                         if r["pnt_pct"] > 0 else "PNT negativo — revisar asignación de clientes")),
+        axis=1)
+    ranked["Cabecera (MWh)"] = (ranked["energy_header_kwh"] / 1000).round(1)
+    ranked["Facturado (MWh)"] = (ranked["energy_billed_kwh"] / 1000).round(1)
+    ranked["AP (MWh)"] = (ranked["energy_streetlight_kwh"] / 1000).round(1)
+    ranked["Técnicas (MWh)"] = (ranked["energy_technical_kwh"] / 1000).round(1)
+    ranked["PNT (MWh)"] = (ranked["pnt_kwh"] / 1000).round(1)
+    top10_cols = ["feeder_id", "Balance", "pnt_pct", "Cabecera (MWh)", "Facturado (MWh)",
+                 "AP (MWh)", "Técnicas (MWh)", "PNT (MWh)", "n_customers", "Motivo"]
+    top10_tbl = ranked.rename(columns={"feeder_id": "Alimentador", "pnt_pct": "PNT %",
+                                       "n_customers": "Clientes"})[
+        ["Alimentador", "Balance", "PNT %", "Cabecera (MWh)", "Facturado (MWh)", "AP (MWh)",
+         "Técnicas (MWh)", "PNT (MWh)", "Clientes", "Motivo"]].to_html(index=False, float_format="%.2f")
+
+    full = bal.copy()
+    full["Cabecera (MWh)"] = (full["energy_header_kwh"] / 1000).round(1)
+    full["Facturado (MWh)"] = (full["energy_billed_kwh"] / 1000).round(1)
+    full["AP (MWh)"] = (full["energy_streetlight_kwh"] / 1000).round(1)
+    full["Técnicas (MWh)"] = (full["energy_technical_kwh"] / 1000).round(1)
+    full["PNT (MWh)"] = (full["pnt_kwh"] / 1000).round(1)
+    tbl = (full.sort_values("pnt_pct", ascending=False)
+           .rename(columns={"feeder_id": "Alimentador", "pnt_pct": "PNT %",
+                            "technical_pct": "Técnicas %", "n_customers": "Clientes"})
+           [["Alimentador", "Cabecera (MWh)", "Facturado (MWh)", "AP (MWh)", "Técnicas (MWh)",
+             "PNT (MWh)", "PNT %", "Técnicas %", "Clientes"]]
+           .to_html(index=False, float_format="%.2f"))
+
+    html = _CONS_TMPL.render(
+        css=_CSS, n=len(bal), n_months=n_months, pnt=f"{pnt:.2f}", tech=f"{tech:.2f}",
+        closed=closed, chart=_fig_b64(fig),
+        header_mwh=f"{tot_h/1000:,.1f}", billed_mwh=f"{bal['energy_billed_kwh'].sum()/1000:,.1f}",
+        ap_mwh=f"{bal['energy_streetlight_kwh'].sum()/1000:,.1f}",
+        tech_mwh=f"{bal['energy_technical_kwh'].sum()/1000:,.1f}",
+        pnt_mwh=f"{bal['pnt_kwh'].sum()/1000:,.1f}",
+        top10_tbl=top10_tbl, glosario=_GLOSARIO, tbl=tbl)
     return _write(html, out_path, pdf)
 
 
