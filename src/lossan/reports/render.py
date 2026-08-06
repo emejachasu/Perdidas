@@ -174,6 +174,10 @@ _CONS_TMPL = Template("""
 <p class="note">"Balances cerrados" NO equivale a "PNT negativo": un alimentador puede no cerrar por otras 4 razones distintas (ver glosario). De los {{n}} alimentadores, {{n_negative}} tienen PNT negativo (posible error de topología/asignación) y {{n_not_closed_other}} no cierran por otro motivo.</p>
 <img src="{{chart}}"/>
 
+<h3>Cabecera vs. energía explicada</h3>
+<p class="note">Rojo = energía de cabecera. Azul = facturado + alumbrado público + pérdidas técnicas (todo lo que SÍ se explica). La diferencia entre las dos barras de cada alimentador es la PNT — si la barra azul es más alta que la roja, la PNT es negativa (sospecha de error de datos).</p>
+<img src="{{chart2}}"/>
+
 <h3>⚠ Top 10 alimentadores prioritarios (mayor sospecha de error de datos/topología o pérdida)</h3>
 <p class="note">Ordenado por |PNT| descendente. Los que NO cierran balance son los candidatos más fuertes a revisión de topología/asignación de clientes antes que a campaña de hurto.</p>
 {{top10_tbl}}
@@ -208,6 +212,20 @@ def consolidated_report(root: str, out_path: str, pdf: bool = True) -> Path:
     ax.bar(b["feeder_id"], b["technical_pct"], label="Técnicas", color="#3b82f6")
     ax.bar(b["feeder_id"], b["pnt_pct"], bottom=b["technical_pct"], label="PNT", color="#ef4444")
     ax.set_ylabel("% cabecera"); ax.legend(); ax.tick_params(axis="x", rotation=90)
+
+    # --- Cabecera vs. explicado (facturado+AP+técnicas): la brecha ES la PNT ---
+    b2 = bal.sort_values("feeder_id").copy()
+    b2["explicado_mwh"] = (b2["energy_billed_kwh"] + b2["energy_streetlight_kwh"]
+                           + b2["energy_technical_kwh"]) / 1000
+    b2["header_mwh"] = b2["energy_header_kwh"] / 1000
+    x = range(len(b2))
+    fig2, ax2 = plt.subplots(figsize=(8, 3))
+    w = 0.4
+    ax2.bar([i - w / 2 for i in x], b2["header_mwh"], width=w, label="Cabecera", color="#ef4444")
+    ax2.bar([i + w / 2 for i in x], b2["explicado_mwh"], width=w,
+           label="Facturado + AP + Técnicas", color="#3b82f6")
+    ax2.set_ylabel("MWh"); ax2.set_xticks(list(x)); ax2.set_xticklabels(b2["feeder_id"], rotation=90)
+    ax2.legend(); ax2.set_title("Cabecera vs. energía explicada — la brecha es la PNT")
 
     # --- Top 10 prioritarios: |PNT| desc, con motivo explícito ---
     ranked = bal.copy()
@@ -255,7 +273,7 @@ def consolidated_report(root: str, out_path: str, pdf: bool = True) -> Path:
         closed=closed, n_negative=n_negative, n_not_closed_other=n_not_closed_other,
         cust_metered=f"{cust_metered:,}", cust_total=f"{cust_total:,}",
         sl_metered=f"{sl_metered:,}", sl_total=f"{sl_total:,}",
-        chart=_fig_b64(fig),
+        chart=_fig_b64(fig), chart2=_fig_b64(fig2),
         header_mwh=f"{tot_h/1000:,.1f}", billed_mwh=f"{bal['energy_billed_kwh'].sum()/1000:,.1f}",
         ap_mwh=f"{bal['energy_streetlight_kwh'].sum()/1000:,.1f}",
         tech_mwh=f"{bal['energy_technical_kwh'].sum()/1000:,.1f}",
