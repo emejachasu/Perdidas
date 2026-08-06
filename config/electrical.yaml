@@ -33,6 +33,14 @@ electrical:
     ref_c: 20.0
     op_c_overhead: 50.0
     op_c_underground: 65.0
+  # Catálogo simplificado de P0/Pk por kVA cuando falta la placa (Anexo B.4):
+  # ni la GDB de CNEL ni la mayoría de SIG traen pérdidas de placa por unidad.
+  # Mismos coeficientes que usa el generador sintético (fracción de Sn
+  # nominal) — CALIBRAR contra ensayos de fábrica/norma cuando existan.
+  transformer_loss_catalog:
+    p0_frac_sn: 0.0025    # pérdidas de vacío ~0.25% de Sn
+    pk_frac_sn: 0.011     # pérdidas de carga nominal ~1.1% de Sn
+
   # Tensiones nominales de referencia
   voltage:
     ll_mv: 13800.0

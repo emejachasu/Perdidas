@@ -82,7 +82,12 @@ def analyze_feeder(tables: dict[str, pd.DataFrame], cfg: Config | None = None,
     hours_period = hours_month * n_months
 
     energy_header = float(header["kwh"].sum())
-    energy_billed = float(consumption["kwh"].sum())
+    # El consumo en BRONZE puede traer más histórico que la cabecera (p. ej.
+    # 36 meses de comercial vs. unos pocos de cabecera real): el balance debe
+    # compararse SOLO contra el mismo periodo, o el PNT sale distorsionado.
+    header_months = set(header["year_month"])
+    consumption_period = consumption[consumption["year_month"].isin(header_months)]
+    energy_billed = float(consumption_period["kwh"].sum())
 
     # --- Alumbrado público (§10): consumo conocido NO facturado ---
     # Se calcula POR LUMINARIA y se acumula en SU puesto de transformación por
@@ -106,7 +111,7 @@ def analyze_feeder(tables: dict[str, pd.DataFrame], cfg: Config | None = None,
     fc = float(cfg.electrical["default_load_factor"])
     site_pf = float(cfg.electrical["default_site_pf"])
     fp = F.loss_factor(fc, k)
-    billed_by_site = consumption.merge(
+    billed_by_site = consumption_period.merge(
         customers[["customer_unit_id", "transformer_site_id"]],
         on="customer_unit_id", how="left",
     ).groupby("transformer_site_id")["kwh"].sum()

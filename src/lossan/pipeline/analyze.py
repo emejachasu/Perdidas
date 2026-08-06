@@ -14,6 +14,52 @@ from ..electrical import formulas as F
 from .balance import analyze_feeder
 
 
+def attach_conductor_impedance(segments: pd.DataFrame, cfg: Config) -> pd.DataFrame:
+    """Añade r_ohm_per_km/x_ohm_per_km a los tramos por conductor_code (§9).
+
+    Cuando el código de conductor no está en ``config/conductors.yaml`` (p.
+    ej. viene de un catálogo de materiales propio del cliente que no está en
+    el SIG, como en CNEL: CODIGOCONDUCTORFASE es un código interno sin
+    dominio), se usa un representativo por sección (primario/secundario,
+    según voltage_v) para no bloquear el flujo de potencia — el resultado es
+    aproximado hasta que se cargue el catálogo real (§ Anexo D1).
+    """
+    if segments is None or segments.empty or "r_ohm_per_km" in segments.columns:
+        return segments
+    cat = cfg.conductors
+    lookup_r = {k: v["r_ohm_km"] for k, v in cat.items()}
+    lookup_x = {k: v["x_ohm_km"] for k, v in cat.items()}
+    primary = [k for k, v in cat.items() if v.get("section") == "primary"]
+    secondary = [k for k, v in cat.items() if v.get("section") == "secondary"]
+    default_primary = primary[len(primary) // 2] if primary else next(iter(cat))
+    default_secondary = secondary[len(secondary) // 2] if secondary else next(iter(cat))
+
+    code = segments.get("conductor_code")
+    voltage = segments.get("voltage_v")
+    r, x = [], []
+    n_fallback = 0
+    for i in range(len(segments)):
+        c = code.iloc[i] if code is not None else None
+        if c in lookup_r:
+            r.append(lookup_r[c]); x.append(lookup_x[c])
+            continue
+        n_fallback += 1
+        is_primary = bool(voltage is not None and pd.notna(voltage.iloc[i])
+                          and voltage.iloc[i] > 1000)
+        d = default_primary if is_primary else default_secondary
+        r.append(lookup_r[d]); x.append(lookup_x[d])
+    segments = segments.copy()
+    segments["r_ohm_per_km"] = r
+    segments["x_ohm_per_km"] = x
+    if n_fallback:
+        logger.warning(
+            f"{n_fallback}/{len(segments)} tramos con conductor_code fuera "
+            f"del catálogo (config/conductors.yaml): impedancia aproximada "
+            f"por representativo de sección. Cargar el catálogo real del "
+            f"cliente para precisión (Anexo D1).")
+    return segments
+
+
 def analyze_feeder_full(tables: dict[str, pd.DataFrame],
                         cfg: Config | None = None,
                         level: str = "full") -> tuple[dict[str, pd.DataFrame], set[str]]:
@@ -107,6 +153,7 @@ def analyze_feeder_full(tables: dict[str, pd.DataFrame],
         try:
             from ..topology import (FeederGraph, build_protection_zones,
                                     run_quality_rules)
+            segments = attach_conductor_impedance(segments, cfg)
             fg = FeederGraph.build(fid, segments, sites, customers,
                                    tables.get('streetlights'))
             topo_findings = fg.validate()

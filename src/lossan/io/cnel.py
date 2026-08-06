@@ -205,6 +205,11 @@ def build_canonical(layers: dict[str, pd.DataFrame], mapping: dict,
             units["phase"] = units["phase_raw"].map(lambda v: decode_phase(v, phase_dom))
             units = units.drop(columns=["phase_raw"])
         units["plate_source"] = "catalog"   # la GDB no trae P0/Pk (Anexo B.4)
+        if "p0_kw" not in units.columns or "pk_kw" not in units.columns:
+            from ..config import load_config
+            cat = load_config().electrical["transformer_loss_catalog"]
+            units["p0_kw"] = units["sn_kva"] * cat["p0_frac_sn"]
+            units["pk_kw"] = units["sn_kva"] * cat["pk_frac_sn"]
         n_units_by_site = units.groupby("site_id").size().to_dict()
         out["transformer_units"] = units
 
@@ -219,12 +224,47 @@ def build_canonical(layers: dict[str, pd.DataFrame], mapping: dict,
                                bank_dom, n_units_by_site.get(sites["site_id"].iloc[i]))
             for i in range(len(sites))
         ]
+        # Reconciliar contra el conteo REAL de unidades (§5.2): un puesto
+        # declarado 'wye_closed'/'delta_closed' con != 3 unidades (o
+        # 'open_delta'/... con != 2, o 'single' con != 1) es una
+        # inconsistencia del dato de placa; el conteo real manda, porque la
+        # capacidad se calcula por unidad y una config imposible rompe §13.
+        _required_units = {
+            BankConfig.SINGLE.value: 1,
+            BankConfig.WYE_CLOSED.value: 3, BankConfig.DELTA_CLOSED.value: 3,
+            BankConfig.DELTA_4WIRE.value: 3,
+            BankConfig.OPEN_DELTA.value: 2, BankConfig.OPEN_WYE_OPEN_DELTA.value: 2,
+        }
+        _by_count = {1: BankConfig.SINGLE.value, 2: BankConfig.OPEN_DELTA.value,
+                     3: BankConfig.WYE_CLOSED.value}
+        n_reconciled = 0
+        new_cfg = []
+        for i, cfg_val in enumerate(sites["bank_config"]):
+            n = n_units_by_site.get(sites["site_id"].iloc[i], 0)
+            req = _required_units.get(cfg_val)
+            if req is not None and req != n:
+                new_cfg.append(_by_count.get(n, BankConfig.INDEPENDENT.value))
+                n_reconciled += 1
+            else:
+                new_cfg.append(cfg_val)
+        sites["bank_config"] = new_cfg
+        if n_reconciled:
+            logger.warning(
+                f"{n_reconciled} puestos con bank_config declarado inconsistente "
+                f"con el número real de unidades: se usó el conteo real.")
         sites["kind"] = "transformer"
         if "declared_kva" in sites:
             sites["declared_kva"] = sites["declared_kva"].map(parse_kva)
         sites = sites.drop(columns=[c for c in ("bank_config_raw", "phase_raw")
                                     if c in sites.columns])
         out["sites"] = sites
+
+        # UNIDADTRANSFDISTRIBUCION no trae ALIMENTADORID propio (no está en
+        # la capa): sin esto toda unidad cae en feeder_id=UNKNOWN.
+        if units is not None:
+            site_feeder = sites.set_index("site_id")["feeder_id"]
+            units["feeder_id"] = units["site_id"].map(site_feeder).fillna(units["feeder_id"])
+            out["transformer_units"] = units
 
     # --- punto de carga (el "edificio") ---
     lps = get("load_points")
@@ -257,9 +297,14 @@ def build_canonical(layers: dict[str, pd.DataFrame], mapping: dict,
         if "phase_raw" in cust:
             cust["phase"] = cust["phase_raw"].map(lambda v: decode_phase(v, phase_dom))
             cust = cust.drop(columns=["phase_raw"])
-        # heredar del punto de carga: transformador, poste y (si falta) la fase
+        # heredar del punto de carga: alimentador, transformador, poste y (si
+        # falta) la fase. CONEXIONCONSUMIDOR no trae ALIMENTADORID propio
+        # (no está en la capa); sin esto todo cliente cae en feeder_id=UNKNOWN.
         if lps is not None:
             lp = lps.set_index("load_point_id")
+            if "feeder_id" in lp.columns:
+                inherited_feeder = cust["site_id"].map(lp["feeder_id"])
+                cust["feeder_id"] = inherited_feeder.fillna(cust["feeder_id"])
             cust["transformer_site_id"] = cust["site_id"].map(
                 lp["transformer_site_id"]) if "transformer_site_id" in lp else None
             if "pole_id" in lp.columns:
@@ -325,6 +370,8 @@ def build_canonical(layers: dict[str, pd.DataFrame], mapping: dict,
             if "phase_raw" in df:
                 df["phase"] = df["phase_raw"].map(lambda v: decode_phase(v, phase_dom))
                 df = df.drop(columns=["phase_raw"])
+            if name == "streetlights" and "technology" not in df.columns:
+                df["technology"] = lmap["streetlights"].get("technology_default", "led")
             out[name] = df
 
     return out

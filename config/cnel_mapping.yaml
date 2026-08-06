@@ -163,6 +163,11 @@ layers:
       pole_id: ESTRUCTURASOPORTEGLOBALID
       transformer_site_id: PARENTCIRCUITSOURCEGUID
       phase_raw: FASECONEXION
+      lamp_w: POTENCIA
+    # La GDB no trae tecnología de lámpara (LED/sodio/mercurio) por luminaria;
+    # se asume 'led' (§10, catálogo en config/streetlight.yaml) hasta que el
+    # inventario de AP la aporte.
+    technology_default: led
 
   switching_devices:
     layer: PuestoProteccionDinamico
