@@ -432,6 +432,14 @@ def build_canonical(layers: dict[str, pd.DataFrame], mapping: dict,
                     df = df.drop(columns=["technology_raw"])
                 elif "technology" not in df.columns:
                     df["technology"] = default_tech
+                # BAJOMEDICION: 1 = tiene medidor propio de AP (su consumo NO
+                # se debe estimar por inventario, ya está medido/facturado
+                # aparte); 0 o NULL = sin medidor -> se asume no medido.
+                if "metered_raw" in df.columns:
+                    df["metered"] = df["metered_raw"] == 1
+                    df = df.drop(columns=["metered_raw"])
+                elif "metered" not in df.columns:
+                    df["metered"] = False
             out[name] = df
 
     return out

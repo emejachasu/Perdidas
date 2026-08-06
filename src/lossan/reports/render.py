@@ -21,15 +21,22 @@ from jinja2 import Template
 from ..lakehouse import Lakehouse
 
 _CSS = """
-body{font-family:Segoe UI,Arial,sans-serif;color:#1f2937;margin:32px;}
-h1{color:#0f172a;margin-bottom:0} .sub{color:#64748b;margin-top:4px}
-.kpis{display:flex;gap:18px;flex-wrap:wrap;margin:18px 0}
-.kpi{background:#f1f5f9;border-radius:10px;padding:14px 18px;min-width:130px}
-.kpi .v{font-size:26px;font-weight:700} .kpi .l{color:#64748b;font-size:12px}
-table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}
-th,td{border:1px solid #e2e8f0;padding:6px 8px;text-align:left}
+body{font-family:Segoe UI,Arial,sans-serif;color:#1f2937;margin:28px;font-size:13px;}
+h1{color:#0f172a;margin-bottom:0} .sub{color:#64748b;margin-top:4px;margin-bottom:14px}
+h3{margin-top:22px;margin-bottom:6px;color:#0f172a}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:14px 0}
+.kpi{background:#f1f5f9;border-radius:10px;padding:12px 10px;box-sizing:border-box;
+     page-break-inside:avoid;text-align:center}
+.kpi .v{font-size:20px;font-weight:700;white-space:nowrap} .kpi .l{color:#64748b;font-size:10.5px;margin-top:2px}
+.note{color:#64748b;font-size:12px;margin:4px 0 10px 0}
+table{border-collapse:collapse;width:100%;margin:8px 0;font-size:11px;table-layout:fixed}
+tr{page-break-inside:avoid}
+th,td{border:1px solid #e2e8f0;padding:4px 6px;text-align:left;overflow-wrap:break-word}
 th{background:#f8fafc} img{max-width:100%} .foot{color:#94a3b8;font-size:11px;margin-top:24px}
+.glossary table{font-size:12px} .glossary td:first-child{width:22%;font-weight:600}
 """
+
+_CSS_LANDSCAPE = "@page{size:A4 landscape;margin:16mm}\n" + _CSS
 
 
 def _fig_b64(fig) -> str:
@@ -70,6 +77,8 @@ _EXEC_TMPL = Template("""
   <div class="kpi"><div class="v">{{pnt_pct}}%</div><div class="l">Pérdidas no técnicas (% cabecera)</div></div>
   <div class="kpi"><div class="v">{{tech_pct}}%</div><div class="l">Pérdidas técnicas (% cabecera)</div></div>
   <div class="kpi"><div class="v">{{n_over}}</div><div class="l">Puestos sobrecargados</div></div>
+  <div class="kpi"><div class="v">{{cust_metered}}/{{cust_total}}</div><div class="l">Clientes con medidor</div></div>
+  <div class="kpi"><div class="v">{{sl_metered}}/{{sl_total}}</div><div class="l">Luminarias con medidor propio</div></div>
 </div>
 <img src="{{chart}}"/>
 <h3>Puestos de mayor cargabilidad</h3>{{sites_tbl}}
@@ -112,19 +121,24 @@ def executive_report(root: str, feeder_id: str, out_path: str, pdf: bool = True)
     html = _EXEC_TMPL.render(
         css=_CSS, fid=feeder_id,
         n_months=int(b.get("n_months", 0)),
-        balance_icon="✅ cierra" if b.get("balance_coherent") else "❌ no cierra",
+        balance_icon="CIERRA" if b.get("balance_coherent") else "NO CIERRA",
         header_mwh=f"{b['energy_header_kwh']/1000:,.1f}",
         billed_mwh=f"{b['energy_billed_kwh']/1000:,.1f}",
         ap_mwh=f"{b['energy_streetlight_kwh']/1000:,.1f}",
         tech_mwh=f"{b['energy_technical_kwh']/1000:,.1f}",
         pnt_mwh=f"{b['pnt_kwh']/1000:,.1f}",
         pnt_pct=f"{b['pnt_pct']:.2f}", tech_pct=f"{b['technical_pct']:.2f}",
+        cust_metered=f"{int(b.get('n_customers_metered', 0)):,}",
+        cust_total=f"{int(b.get('n_customers', 0)):,}",
+        sl_metered=f"{int(b.get('n_streetlights_metered', 0)):,}",
+        sl_total=f"{int(b.get('n_streetlights', 0)):,}",
         n_over=n_over, chart=_fig_b64(fig), sites_tbl=sites_tbl, risk_tbl=risk_tbl,
         glosario=_GLOSARIO)
     return _write(html, out_path, pdf)
 
 
 _GLOSARIO = """
+<div class="glossary">
 <h3>Cómo leer este reporte</h3>
 <table>
 <tr><th>Término</th><th>Qué significa</th></tr>
@@ -134,8 +148,9 @@ _GLOSARIO = """
 <tr><td><b>Pérdidas técnicas</b></td><td>Energía que se disipa físicamente en la red (calor en conductores y transformadores) por su propia naturaleza eléctrica — I²R en conductores, pérdidas de vacío y de carga en transformadores. Se calculan con la física real de la red (calibre de conductor, longitud, potencia de transformador), no se miden directamente.</td></tr>
 <tr><td><b>PNT (Pérdidas No Técnicas)</b></td><td>Todo lo que NO se explica por facturación + AP + pérdidas técnicas. Es un residuo contable: <code>PNT = Cabecera − Facturado − AP − Técnicas</code>. Agrupa hurto de energía, errores de medición, fraude, y también <u>errores de datos</u> (topología mal armada, clientes mal asignados a su alimentador, etc.) — un PNT extremo (muy alto o negativo) es indicio de esto último, no necesariamente de hurto.</td></tr>
 <tr><td><b>PNT negativo</b></td><td>Significa que lo facturado + AP + técnicas ya supera la cabecera del mismo periodo. Físicamente no debería pasar — casi siempre delata un problema de datos: clientes asociados al alimentador equivocado, cuentas duplicadas, o error en la medición de cabecera. Se prioriza para inspección/depuración de datos antes que para hurto.</td></tr>
-<tr><td><b>Balance cerrado</b></td><td>El alimentador pasó las 5 validaciones internas de coherencia (PNT no negativo, todo dentro de cabecera, pérdidas totales y técnicas en rango plausible, cabecera positiva). Si no cierra, el resultado de ESE alimentador es sospechoso y no debe tomarse como definitivo.</td></tr>
+<tr><td><b>Balance cerrado</b></td><td>El alimentador pasó las 5 validaciones internas de coherencia (PNT no negativo, todo dentro de cabecera, pérdidas totales y técnicas en rango plausible, cabecera positiva). "No cerrado" NO significa automáticamente PNT negativo — puede fallar por cualquiera de las 5 validaciones; revisar la columna "Motivo" del Top 10 para el detalle exacto de cada caso.</td></tr>
 </table>
+</div>
 """
 
 _CONS_TMPL = Template("""
@@ -152,12 +167,15 @@ _CONS_TMPL = Template("""
 <div class="kpis">
   <div class="kpi"><div class="v">{{pnt}}%</div><div class="l">PNT global (% cabecera)</div></div>
   <div class="kpi"><div class="v">{{tech}}%</div><div class="l">Técnicas global (% cabecera)</div></div>
-  <div class="kpi"><div class="v">{{closed}}/{{n}}</div><div class="l">Balances cerrados</div></div>
+  <div class="kpi"><div class="v">{{closed}}/{{n}}</div><div class="l">Balances cerrados<br/>({{n_negative}} con PNT negativo)</div></div>
+  <div class="kpi"><div class="v">{{cust_metered}}/{{cust_total}}</div><div class="l">Clientes con medidor registrado</div></div>
+  <div class="kpi"><div class="v">{{sl_metered}}/{{sl_total}}</div><div class="l">Luminarias con medidor propio</div></div>
 </div>
+<p class="note">"Balances cerrados" NO equivale a "PNT negativo": un alimentador puede no cerrar por otras 4 razones distintas (ver glosario). De los {{n}} alimentadores, {{n_negative}} tienen PNT negativo (posible error de topología/asignación) y {{n_not_closed_other}} no cierran por otro motivo.</p>
 <img src="{{chart}}"/>
 
 <h3>⚠ Top 10 alimentadores prioritarios (mayor sospecha de error de datos/topología o pérdida)</h3>
-<p style="color:#64748b;font-size:13px">Ordenado por |PNT| descendente. Los que NO cierran balance (❌) son los candidatos más fuertes a revisión de topología/asignación de clientes antes que a campaña de hurto.</p>
+<p class="note">Ordenado por |PNT| descendente. Los que NO cierran balance son los candidatos más fuertes a revisión de topología/asignación de clientes antes que a campaña de hurto.</p>
 {{top10_tbl}}
 
 {{glosario}}
@@ -178,6 +196,12 @@ def consolidated_report(root: str, out_path: str, pdf: bool = True) -> Path:
     tech = 100 * bal["energy_technical_kwh"].sum() / tot_h
     closed = int(status["balance_closed"].sum()) if not status.empty else 0
     n_months = int(bal["n_months"].iloc[0]) if "n_months" in bal.columns and len(bal) else 0
+    n_negative = int((bal["pnt_pct"] < 0).sum())
+    n_not_closed_other = max(0, len(bal) - closed - n_negative)
+    cust_metered = int(bal.get("n_customers_metered", pd.Series(dtype=int)).sum())
+    cust_total = int(bal["n_customers"].sum())
+    sl_metered = int(bal.get("n_streetlights_metered", pd.Series(dtype=int)).sum())
+    sl_total = int(bal["n_streetlights"].sum())
 
     fig, ax = plt.subplots(figsize=(8, 3))
     b = bal.sort_values("feeder_id")
@@ -195,7 +219,7 @@ def consolidated_report(root: str, out_path: str, pdf: bool = True) -> Path:
     else:
         ranked["balance_closed"], ranked["failed_checks"] = True, ""
     ranked = ranked.sort_values("abs_pnt_pct", ascending=False).head(10)
-    ranked["Balance"] = ranked["balance_closed"].map({True: "✅", False: "❌"})
+    ranked["Balance"] = ranked["balance_closed"].map({True: "cierra", False: "NO cierra"})
     ranked["Motivo"] = ranked.apply(
         lambda r: (f"No cierra: {r['failed_checks']}" if not r["balance_closed"]
                    else ("PNT muy alto — posible hurto, pero verificar AP/topología primero"
@@ -227,8 +251,11 @@ def consolidated_report(root: str, out_path: str, pdf: bool = True) -> Path:
            .to_html(index=False, float_format="%.2f"))
 
     html = _CONS_TMPL.render(
-        css=_CSS, n=len(bal), n_months=n_months, pnt=f"{pnt:.2f}", tech=f"{tech:.2f}",
-        closed=closed, chart=_fig_b64(fig),
+        css=_CSS_LANDSCAPE, n=len(bal), n_months=n_months, pnt=f"{pnt:.2f}", tech=f"{tech:.2f}",
+        closed=closed, n_negative=n_negative, n_not_closed_other=n_not_closed_other,
+        cust_metered=f"{cust_metered:,}", cust_total=f"{cust_total:,}",
+        sl_metered=f"{sl_metered:,}", sl_total=f"{sl_total:,}",
+        chart=_fig_b64(fig),
         header_mwh=f"{tot_h/1000:,.1f}", billed_mwh=f"{bal['energy_billed_kwh'].sum()/1000:,.1f}",
         ap_mwh=f"{bal['energy_streetlight_kwh'].sum()/1000:,.1f}",
         tech_mwh=f"{bal['energy_technical_kwh'].sum()/1000:,.1f}",

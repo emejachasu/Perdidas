@@ -100,13 +100,21 @@ def analyze_feeder(tables: dict[str, pd.DataFrame], cfg: Config | None = None,
     # --- Alumbrado público (§10): consumo conocido NO facturado ---
     # Se calcula POR LUMINARIA y se acumula en SU puesto de transformación por
     # traza (§10.2): repartirlo uniformemente distorsiona la cargabilidad.
+    # Las luminarias con medidor propio (BAJOMEDICION=1) NO se estiman aquí:
+    # su consumo ya se mide (y factura) aparte; estimarlo por inventario lo
+    # contaría dos veces y sobreestima el AP (hallazgo real de calibración).
     from .streetlight import annual_hours_on
     lat = float(cfg.streetlight.get("latitude_default", 0.0))
     hours_on = annual_hours_on(lat, cfg)   # efemérides si use_ephemeris, si no default
     tech = cfg.streetlight["technology"]
+    is_metered_sl = (streetlights.get("metered", pd.Series(False, index=streetlights.index))
+                     .fillna(False))
+    n_streetlights_metered = int(is_metered_sl.sum())
+    n_streetlights_unmetered = int(len(streetlights) - n_streetlights_metered)
+    unmetered_streetlights = streetlights[~is_metered_sl]
     ap_by_site: dict[str, float] = {}
     energy_streetlight = 0.0
-    for r in streetlights.itertuples():
+    for r in unmetered_streetlights.itertuples():
         t = tech.get(r.technology, tech["led"])
         p_kw = r.lamp_w / 1000.0 * (1.0 + t["ballast_loss_frac"])
         e = p_kw * hours_on * 30.0 * n_months
@@ -114,6 +122,13 @@ def analyze_feeder(tables: dict[str, pd.DataFrame], cfg: Config | None = None,
         tx = getattr(r, "transformer_site_id", None)
         if tx is not None and not (isinstance(tx, float) and pd.isna(tx)):
             ap_by_site[tx] = ap_by_site.get(tx, 0.0) + e
+
+    # --- Medición de clientes (proxy: presencia de número de serie de medidor) ---
+    has_meter = (customers.get("meter_serial", pd.Series(None, index=customers.index))
+                .notna() if "meter_serial" in customers.columns
+                else pd.Series(False, index=customers.index))
+    n_customers_metered = int(has_meter.sum())
+    n_customers_unmetered = int(len(customers) - n_customers_metered)
 
     # --- Pérdidas técnicas (§12) por puesto de transformación ---
     fc = float(cfg.electrical["default_load_factor"])
@@ -235,8 +250,12 @@ def analyze_feeder(tables: dict[str, pd.DataFrame], cfg: Config | None = None,
         "unexplained_pct": None,
         "pnt_negative_alert": bool(pnt < 0),
         "n_customers": int(customers.shape[0]),
+        "n_customers_metered": n_customers_metered,
+        "n_customers_unmetered": n_customers_unmetered,
         "n_tx_sites": int(sites.shape[0]),
         "n_streetlights": int(streetlights.shape[0]),
+        "n_streetlights_metered": n_streetlights_metered,
+        "n_streetlights_unmetered": n_streetlights_unmetered,
         "n_months": n_months,
     }])
 

@@ -188,6 +188,7 @@ layers:
       phase_raw: FASECONEXION
       lamp_w: POTENCIA
       technology_raw: SUBTIPO
+      metered_raw: BAJOMEDICION   # 1=tiene medidor propio de AP, 0/NULL=no
     # Dominio real de SUBTIPO en Luminaria (verificado por el cliente): tecnología
     # de lámpara -> categorías de config/streetlight.yaml. Se usa 'led' como
     # default solo si el código no aparece aquí.
