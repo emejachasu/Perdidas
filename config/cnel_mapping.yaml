@@ -217,7 +217,8 @@ layers:
   # node_from/node_to explícitos: se derivan de los extremos de la geometría
   # de línea (snapping por coordenada) al momento de la ingesta.
   segments:
-    layers: [TramoDistribucionAereo, TramoDistribucionSubterraneo]
+    layers: [TramoDistribucionAereo, TramoDistribucionSubterraneo,
+             TramoBajaTensionAereo, TramoBajaTensionSubterraneo]
     fields:
       segment_id: GLOBALID
       conductor_code: CODIGOCONDUCTORFASE
