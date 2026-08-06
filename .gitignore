@@ -1,5 +1,6 @@
 # Datos y artefactos generados
 data/
+export/
 *.parquet
 *.duckdb
 
