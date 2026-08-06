@@ -9,3 +9,4 @@ streetlight:
     sodium:         { ballast_loss_frac: 0.18, power_factor: 0.90 }
     mercury:        { ballast_loss_frac: 0.20, power_factor: 0.85 }
     metal_halide:   { ballast_loss_frac: 0.15, power_factor: 0.90 }
+    induction:      { ballast_loss_frac: 0.12, power_factor: 0.90 }

@@ -91,6 +91,29 @@ layers:
       declared_kva: POTENCIAKVA
       metered: MEDIDO
       node_id: CIRCUITSOURCEGUID
+      subtype_raw: SUBTIPO
+    # SUBTIPO de PuestoTransfDistribucion (verificado por el cliente): describe
+    # el tipo físico de instalación (mono/bi/trifásico, integral vs. banco de
+    # 2/3 unidades). Es una señal MÁS confiable que CONFIGURACIONLADOBAJA sola
+    # (que ya se vio con valores inconsistentes) y se usa para reconciliar
+    # bank_config junto con el conteo real de unidades (§5.2).
+    subtype_domain:
+      1: {phases: 1, kind: single}              # Transformador Monofásico en Poste
+      2: {phases: 1, kind: single}              # Transformador Monofásico en Cabina
+      3: {phases: 1, kind: single}              # Padmounted Monofásico Exterior
+      4: {phases: 1, kind: single}              # Padmounted Monofásico en Cabina
+      5: {phases: 3, kind: integral_3ph}        # Transformador Trifásico en Poste
+      6: {phases: 3, kind: integral_3ph}        # Transformador Trifásico en Cabina
+      7: {phases: 3, kind: integral_3ph}        # Padmounted Trifásico Exterior
+      8: {phases: 3, kind: integral_3ph}        # Padmounted Trifásico en Cabina
+      9: {phases: 2, kind: bank2}                # Banco de 2 Transformadores en Poste
+      10: {phases: 2, kind: bank2}               # Banco de 2 Transformadores en Cabina
+      11: {phases: 3, kind: bank3}               # Banco de 3 Transformadores en Poste
+      12: {phases: 3, kind: bank3}               # Banco de 3 Transformadores en Cabina
+      13: {phases: 2, kind: biphase}             # Transformador Bifásico en Poste
+      14: {phases: 2, kind: biphase}             # Transformador Bifásico en Cabina
+      15: {phases: 2, kind: biphase}             # Padmounted Bifásico Exterior
+      16: {phases: 2, kind: biphase}             # Padmounted Bifásico en Cabina
 
   transformer_units:           # unidades del banco
     layer: UNIDADTRANSFDISTRIBUCION
@@ -164,9 +187,22 @@ layers:
       transformer_site_id: PARENTCIRCUITSOURCEGUID
       phase_raw: FASECONEXION
       lamp_w: POTENCIA
-    # La GDB no trae tecnología de lámpara (LED/sodio/mercurio) por luminaria;
-    # se asume 'led' (§10, catálogo en config/streetlight.yaml) hasta que el
-    # inventario de AP la aporte.
+      technology_raw: SUBTIPO
+    # Dominio real de SUBTIPO en Luminaria (verificado por el cliente): tecnología
+    # de lámpara -> categorías de config/streetlight.yaml. Se usa 'led' como
+    # default solo si el código no aparece aquí.
+    technology_domain:
+      1: mercury            # Mercurio Cerrada
+      2: mercury            # Mercurio Abierta
+      3: sodium              # Sodio Abierta
+      4: sodium              # Sodio Cerrada
+      5: led                 # LED
+      6: sodium              # Proyector Sodio
+      7: mercury            # Proyector Mercurio
+      9: induction            # Inducción
+      10: metal_halide        # Proyector Metal Halide
+      11: metal_halide        # Metal Halide
+      12: led                 # Proyector LED
     technology_default: led
 
   switching_devices:

@@ -1,0 +1,1951 @@
+# Catálogo de conductores derivado AUTOMÁTICAMENTE de CATALOGOESTRUCTURA
+# (DESCRIPCIONLARGA) por `lossan ingest-cnel` — ver
+# src/lossan/io/conductor_catalog.py. APROXIMADO (física por calibre/
+# material, sin corrección por trenzado ni GMD real): calibrar contra
+# el catálogo del fabricante cuando esté disponible (Anexo D1).
+# No editar a mano — se regenera en cada `ingest-cnel`.
+conductors:
+  COO0001:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.8152
+    section: secondary
+    x_ohm_km: 0.09
+  COO0002:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.5127
+    section: secondary
+    x_ohm_km: 0.09
+  COO0003:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.3224
+    section: secondary
+    x_ohm_km: 0.09
+  COO0004:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.2557
+    section: secondary
+    x_ohm_km: 0.09
+  COO0005:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.2028
+    section: secondary
+    x_ohm_km: 0.09
+  COO0006:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 1.3363
+    section: secondary
+    x_ohm_km: 0.09
+  COO0007:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.8404
+    section: secondary
+    x_ohm_km: 0.09
+  COO0008:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.5286
+    section: secondary
+    x_ohm_km: 0.09
+  COO0009:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.4192
+    section: secondary
+    x_ohm_km: 0.09
+  COO0010:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.3324
+    section: secondary
+    x_ohm_km: 0.09
+  COO0011:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 1.2962
+    section: primary
+    x_ohm_km: 0.38
+  COO0012:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.8152
+    section: primary
+    x_ohm_km: 0.38
+  COO0013:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.5127
+    section: primary
+    x_ohm_km: 0.38
+  COO0014:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.3224
+    section: primary
+    x_ohm_km: 0.38
+  COO0015:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.2557
+    section: primary
+    x_ohm_km: 0.38
+  COO0016:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.2028
+    section: primary
+    x_ohm_km: 0.38
+  COO0017:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 2.1249
+    section: primary
+    x_ohm_km: 0.38
+  COO0018:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 1.3363
+    section: primary
+    x_ohm_km: 0.38
+  COO0019:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.8404
+    section: primary
+    x_ohm_km: 0.38
+  COO0020:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.5286
+    section: primary
+    x_ohm_km: 0.38
+  COO0021:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.4192
+    section: primary
+    x_ohm_km: 0.38
+  COO0022:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.3324
+    section: primary
+    x_ohm_km: 0.38
+  COO0023:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 2.1249
+    section: primary
+    x_ohm_km: 0.38
+  COO0024:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 1.3363
+    section: primary
+    x_ohm_km: 0.38
+  COO0025:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.8404
+    section: primary
+    x_ohm_km: 0.38
+  COO0026:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.5286
+    section: primary
+    x_ohm_km: 0.38
+  COO0027:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.4192
+    section: primary
+    x_ohm_km: 0.38
+  COO0028:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.3324
+    section: primary
+    x_ohm_km: 0.38
+  COO0029:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 2.1249
+    section: primary
+    x_ohm_km: 0.38
+  COO0030:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 1.3363
+    section: primary
+    x_ohm_km: 0.38
+  COO0031:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.8404
+    section: primary
+    x_ohm_km: 0.38
+  COO0032:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.5286
+    section: primary
+    x_ohm_km: 0.38
+  COO0033:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.4192
+    section: primary
+    x_ohm_km: 0.38
+  COO0034:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.3324
+    section: primary
+    x_ohm_km: 0.38
+  COO0035:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.2636
+    section: primary
+    x_ohm_km: 0.38
+  COO0036:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 6.9726
+    section: primary
+    x_ohm_km: 0.38
+  COO0037:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 13.9451
+    section: primary
+    x_ohm_km: 0.38
+  COO0038:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 1.3363
+    section: primary
+    x_ohm_km: 0.38
+  COO0039:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.8404
+    section: primary
+    x_ohm_km: 0.38
+  COO0040:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.5286
+    section: primary
+    x_ohm_km: 0.38
+  COO0041:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.4192
+    section: primary
+    x_ohm_km: 0.38
+  COO0042:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.3324
+    section: primary
+    x_ohm_km: 0.38
+  COO0043:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.2636
+    section: primary
+    x_ohm_km: 0.38
+  COO0044:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 6.9726
+    section: primary
+    x_ohm_km: 0.38
+  COO0045:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 2.1249
+    section: secondary
+    x_ohm_km: 0.09
+  COO0046:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 1.3363
+    section: secondary
+    x_ohm_km: 0.09
+  COO0047:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.8404
+    section: secondary
+    x_ohm_km: 0.09
+  COO0048:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.5286
+    section: secondary
+    x_ohm_km: 0.09
+  COO0049:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 2.1249
+    section: secondary
+    x_ohm_km: 0.09
+  COO0050:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 1.3363
+    section: secondary
+    x_ohm_km: 0.09
+  COO0051:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.8404
+    section: secondary
+    x_ohm_km: 0.09
+  COO0052:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.5286
+    section: secondary
+    x_ohm_km: 0.09
+  COO0053:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 2.1249
+    section: secondary
+    x_ohm_km: 0.09
+  COO0054:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 1.3363
+    section: secondary
+    x_ohm_km: 0.09
+  COO0055:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.8404
+    section: secondary
+    x_ohm_km: 0.09
+  COO0056:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.5286
+    section: secondary
+    x_ohm_km: 0.09
+  COO0065:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.8152
+    section: secondary
+    x_ohm_km: 0.09
+  COO0066:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.5127
+    section: secondary
+    x_ohm_km: 0.09
+  COO0067:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.3224
+    section: secondary
+    x_ohm_km: 0.09
+  COO0068:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.2557
+    section: secondary
+    x_ohm_km: 0.09
+  COO0069:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.2028
+    section: secondary
+    x_ohm_km: 0.09
+  COO0070:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1608
+    section: secondary
+    x_ohm_km: 0.09
+  COO0071:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1361
+    section: secondary
+    x_ohm_km: 0.09
+  COO0072:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0972
+    section: secondary
+    x_ohm_km: 0.09
+  COO0073:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.8152
+    section: secondary
+    x_ohm_km: 0.09
+  COO0074:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.5127
+    section: secondary
+    x_ohm_km: 0.09
+  COO0075:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.3224
+    section: secondary
+    x_ohm_km: 0.09
+  COO0076:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.2557
+    section: secondary
+    x_ohm_km: 0.09
+  COO0077:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.2028
+    section: secondary
+    x_ohm_km: 0.09
+  COO0095:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.8152
+    section: primary
+    x_ohm_km: 0.12
+  COO0096:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.5127
+    section: primary
+    x_ohm_km: 0.12
+  COO0097:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.3224
+    section: primary
+    x_ohm_km: 0.12
+  COO0098:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.2557
+    section: primary
+    x_ohm_km: 0.12
+  COO0099:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.2028
+    section: primary
+    x_ohm_km: 0.12
+  COO0100:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1608
+    section: primary
+    x_ohm_km: 0.12
+  COO0101:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0681
+    section: primary
+    x_ohm_km: 0.12
+  COO0102:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.034
+    section: primary
+    x_ohm_km: 0.12
+  COO0103:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 1.3363
+    section: primary
+    x_ohm_km: 0.12
+  COO0104:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.8404
+    section: primary
+    x_ohm_km: 0.12
+  COO0105:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.5286
+    section: primary
+    x_ohm_km: 0.12
+  COO0106:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.4192
+    section: primary
+    x_ohm_km: 0.12
+  COO0107:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.3324
+    section: primary
+    x_ohm_km: 0.12
+  COO0108:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.2636
+    section: primary
+    x_ohm_km: 0.12
+  COO0109:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1116
+    section: primary
+    x_ohm_km: 0.12
+  COO0110:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0744
+    section: primary
+    x_ohm_km: 0.12
+  COO0111:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0558
+    section: primary
+    x_ohm_km: 0.12
+  COO0112:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.8152
+    section: secondary
+    x_ohm_km: 0.09
+  COO0113:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.5127
+    section: secondary
+    x_ohm_km: 0.09
+  COO0114:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.3224
+    section: secondary
+    x_ohm_km: 0.09
+  COO0115:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.2557
+    section: secondary
+    x_ohm_km: 0.09
+  COO0116:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.2028
+    section: secondary
+    x_ohm_km: 0.09
+  COO0117:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1608
+    section: secondary
+    x_ohm_km: 0.09
+  COO0118:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0681
+    section: secondary
+    x_ohm_km: 0.09
+  COO0119:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0454
+    section: secondary
+    x_ohm_km: 0.09
+  COO0120:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.034
+    section: secondary
+    x_ohm_km: 0.09
+  COO0121:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 1.3363
+    section: secondary
+    x_ohm_km: 0.09
+  COO0122:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.8404
+    section: secondary
+    x_ohm_km: 0.09
+  COO0123:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.5286
+    section: secondary
+    x_ohm_km: 0.09
+  COO0124:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.4192
+    section: secondary
+    x_ohm_km: 0.09
+  COO0125:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.3324
+    section: secondary
+    x_ohm_km: 0.09
+  COO0126:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.2636
+    section: secondary
+    x_ohm_km: 0.09
+  COO0127:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1116
+    section: secondary
+    x_ohm_km: 0.09
+  COO0128:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0744
+    section: secondary
+    x_ohm_km: 0.09
+  COO0129:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0558
+    section: secondary
+    x_ohm_km: 0.09
+  COO0130:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 8.2854
+    section: secondary
+    x_ohm_km: 0.09
+  COO0131:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 5.2108
+    section: secondary
+    x_ohm_km: 0.09
+  COO0132:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 3.2771
+    section: secondary
+    x_ohm_km: 0.09
+  COO0133:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 2.061
+    section: secondary
+    x_ohm_km: 0.09
+  COO0134:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 1.2962
+    section: secondary
+    x_ohm_km: 0.09
+  COO0135:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1608
+    section: secondary
+    x_ohm_km: 0.09
+  COO0136:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1361
+    section: secondary
+    x_ohm_km: 0.09
+  COO0137:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1134
+    section: secondary
+    x_ohm_km: 0.09
+  COO0138:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0972
+    section: secondary
+    x_ohm_km: 0.09
+  COO0139:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 8.5423
+    section: secondary
+    x_ohm_km: 0.09
+  COO0140:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 5.3723
+    section: secondary
+    x_ohm_km: 0.09
+  COO0141:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 3.3787
+    section: secondary
+    x_ohm_km: 0.09
+  COO0142:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 2.1249
+    section: secondary
+    x_ohm_km: 0.09
+  COO0143:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.2636
+    section: secondary
+    x_ohm_km: 0.09
+  COO0144:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.2231
+    section: secondary
+    x_ohm_km: 0.09
+  COO0145:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1859
+    section: secondary
+    x_ohm_km: 0.09
+  COO0146:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1594
+    section: secondary
+    x_ohm_km: 0.09
+  COO0147:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 5.2108
+    section: secondary
+    x_ohm_km: 0.09
+  COO0148:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 3.2771
+    section: secondary
+    x_ohm_km: 0.09
+  COO0149:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 2.061
+    section: secondary
+    x_ohm_km: 0.09
+  COO0150:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 1.2962
+    section: secondary
+    x_ohm_km: 0.09
+  COO0151:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 8.2854
+    section: secondary
+    x_ohm_km: 0.09
+  COO0152:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1608
+    section: secondary
+    x_ohm_km: 0.09
+  COO0153:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1361
+    section: secondary
+    x_ohm_km: 0.09
+  COO0154:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1134
+    section: secondary
+    x_ohm_km: 0.09
+  COO0155:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0972
+    section: secondary
+    x_ohm_km: 0.09
+  COO0156:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0851
+    section: secondary
+    x_ohm_km: 0.09
+  COO0157:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0681
+    section: secondary
+    x_ohm_km: 0.09
+  COO0158:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 1.2962
+    section: secondary
+    x_ohm_km: 0.09
+  COO0159:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 2.061
+    section: secondary
+    x_ohm_km: 0.09
+  COO0160:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0851
+    section: secondary
+    x_ohm_km: 0.09
+  COO0161:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0681
+    section: secondary
+    x_ohm_km: 0.09
+  COO0162:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 5.2108
+    section: secondary
+    x_ohm_km: 0.09
+  COO0179:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.4192
+    section: secondary
+    x_ohm_km: 0.09
+  COO0180:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.4192
+    section: secondary
+    x_ohm_km: 0.09
+  COO0181:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.4192
+    section: secondary
+    x_ohm_km: 0.09
+  COO0182:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1361
+    section: secondary
+    x_ohm_km: 0.09
+  COO0183:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0972
+    section: secondary
+    x_ohm_km: 0.09
+  COO0184:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 2.061
+    section: primary
+    x_ohm_km: 0.38
+  COO0185:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1608
+    section: primary
+    x_ohm_km: 0.38
+  COO0186:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 2.1249
+    section: primary
+    x_ohm_km: 0.38
+  COO0187:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 8.2854
+    section: secondary
+    x_ohm_km: 0.09
+  COO0188:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 2.1249
+    section: secondary
+    x_ohm_km: 0.09
+  COO0189:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 1.2962
+    section: secondary
+    x_ohm_km: 0.09
+  COO0190:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 2.061
+    section: secondary
+    x_ohm_km: 0.09
+  COO0191:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.3224
+    section: secondary
+    x_ohm_km: 0.09
+  COO0192:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.8152
+    section: secondary
+    x_ohm_km: 0.09
+  COO0193:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 1.2962
+    section: secondary
+    x_ohm_km: 0.09
+  COO0194:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 2.061
+    section: secondary
+    x_ohm_km: 0.09
+  COO0195:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.3224
+    section: secondary
+    x_ohm_km: 0.09
+  COO0196:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 3.3787
+    section: primary
+    x_ohm_km: 0.38
+  COO0197:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 3.2771
+    section: secondary
+    x_ohm_km: 0.09
+  COO0198:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 5.2108
+    section: secondary
+    x_ohm_km: 0.09
+  COO0199:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 2.061
+    section: secondary
+    x_ohm_km: 0.09
+  COO0206:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1361
+    section: secondary
+    x_ohm_km: 0.09
+  COO0208:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.8152
+    section: secondary
+    x_ohm_km: 0.09
+  COO0209:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.5127
+    section: secondary
+    x_ohm_km: 0.09
+  COO0210:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.3224
+    section: secondary
+    x_ohm_km: 0.09
+  COO0211:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.2557
+    section: secondary
+    x_ohm_km: 0.09
+  COO0212:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.2028
+    section: secondary
+    x_ohm_km: 0.09
+  COO0213:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1608
+    section: secondary
+    x_ohm_km: 0.09
+  COO0214:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1361
+    section: secondary
+    x_ohm_km: 0.09
+  COO0215:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0972
+    section: secondary
+    x_ohm_km: 0.09
+  COO0216:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0681
+    section: secondary
+    x_ohm_km: 0.09
+  COO0217:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.034
+    section: secondary
+    x_ohm_km: 0.09
+  COO0218:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 1.3363
+    section: secondary
+    x_ohm_km: 0.09
+  COO0219:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.8404
+    section: secondary
+    x_ohm_km: 0.09
+  COO0220:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.5286
+    section: secondary
+    x_ohm_km: 0.09
+  COO0221:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.4192
+    section: secondary
+    x_ohm_km: 0.09
+  COO0222:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.3324
+    section: secondary
+    x_ohm_km: 0.09
+  COO0223:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.2636
+    section: secondary
+    x_ohm_km: 0.09
+  COO0224:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1116
+    section: secondary
+    x_ohm_km: 0.09
+  COO0225:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0744
+    section: secondary
+    x_ohm_km: 0.09
+  COO0226:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0558
+    section: secondary
+    x_ohm_km: 0.09
+  COO0227:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 5.2108
+    section: secondary
+    x_ohm_km: 0.09
+  COO0228:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 8.2854
+    section: secondary
+    x_ohm_km: 0.09
+  COO0229:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.2231
+    section: primary
+    x_ohm_km: 0.38
+  COO0230:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1859
+    section: primary
+    x_ohm_km: 0.38
+  COO0231:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1594
+    section: primary
+    x_ohm_km: 0.38
+  COO0232:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1395
+    section: primary
+    x_ohm_km: 0.38
+  COO0233:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.124
+    section: primary
+    x_ohm_km: 0.38
+  COO0234:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1116
+    section: primary
+    x_ohm_km: 0.38
+  COO0235:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.093
+    section: primary
+    x_ohm_km: 0.38
+  COO0236:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0744
+    section: primary
+    x_ohm_km: 0.38
+  COO0237:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1169
+    section: primary
+    x_ohm_km: 0.38
+  COO0238:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 6.9726
+    section: primary
+    x_ohm_km: 0.38
+  COO0239:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 6.9726
+    section: primary
+    x_ohm_km: 0.38
+  COO0240:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 13.9451
+    section: primary
+    x_ohm_km: 0.38
+  COO0241:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 11.1561
+    section: primary
+    x_ohm_km: 0.38
+  COO0242:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1169
+    section: primary
+    x_ohm_km: 0.38
+  COO0243:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 6.9726
+    section: primary
+    x_ohm_km: 0.38
+  COO0244:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 6.9726
+    section: primary
+    x_ohm_km: 0.38
+  COO0245:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 13.9451
+    section: primary
+    x_ohm_km: 0.38
+  COO0246:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 11.1561
+    section: primary
+    x_ohm_km: 0.38
+  COO0247:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1169
+    section: primary
+    x_ohm_km: 0.38
+  COO0248:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.2636
+    section: primary
+    x_ohm_km: 0.38
+  COO0249:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.2636
+    section: primary
+    x_ohm_km: 0.38
+  COO0250:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0681
+    section: secondary
+    x_ohm_km: 0.09
+  COO0251:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0454
+    section: secondary
+    x_ohm_km: 0.09
+  COO0252:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 20.9481
+    section: secondary
+    x_ohm_km: 0.09
+  COO0253:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0756
+    section: secondary
+    x_ohm_km: 0.09
+  COO0254:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0454
+    section: secondary
+    x_ohm_km: 0.09
+  COO0255:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0851
+    section: secondary
+    x_ohm_km: 0.09
+  COO0256:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0756
+    section: secondary
+    x_ohm_km: 0.09
+  COO0260:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1134
+    section: primary
+    x_ohm_km: 0.12
+  COO0261:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0851
+    section: primary
+    x_ohm_km: 0.12
+  COO0262:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 1.2962
+    section: primary
+    x_ohm_km: 0.12
+  COO0263:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0567
+    section: primary
+    x_ohm_km: 0.12
+  COO0264:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0486
+    section: primary
+    x_ohm_km: 0.12
+  COO0265:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0972
+    section: secondary
+    x_ohm_km: 0.09
+  COO0266:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 1.3363
+    section: primary
+    x_ohm_km: 0.38
+  COO0267:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 3.2446538174613906e+26
+    section: primary
+    x_ohm_km: 0.38
+  COO0268:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 1.3363
+    section: primary
+    x_ohm_km: 0.38
+  COO0269:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1859
+    section: primary
+    x_ohm_km: 0.38
+  COO0270:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.166
+    section: primary
+    x_ohm_km: 0.38
+  COO0271:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1405
+    section: primary
+    x_ohm_km: 0.38
+  COO0272:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0877
+    section: primary
+    x_ohm_km: 0.38
+  COO0273:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1594
+    section: primary
+    x_ohm_km: 0.38
+  COO0274:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1361
+    section: primary
+    x_ohm_km: 0.38
+  COO0275:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0972
+    section: primary
+    x_ohm_km: 0.38
+  COO0276:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0681
+    section: primary
+    x_ohm_km: 0.38
+  COO0277:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0454
+    section: primary
+    x_ohm_km: 0.38
+  COO0278:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.3324
+    section: secondary
+    x_ohm_km: 0.09
+  COO0279:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.3324
+    section: secondary
+    x_ohm_km: 0.09
+  COO0299:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.034
+    section: secondary
+    x_ohm_km: 0.09
+  COO0300:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1134
+    section: secondary
+    x_ohm_km: 0.09
+  COO0301:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0567
+    section: secondary
+    x_ohm_km: 0.09
+  COO0302:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0486
+    section: secondary
+    x_ohm_km: 0.09
+  COO0303:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0454
+    section: secondary
+    x_ohm_km: 0.09
+  COO0304:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 2.1249
+    section: primary
+    x_ohm_km: 0.38
+  COO0305:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 1.3363
+    section: primary
+    x_ohm_km: 0.38
+  COO0306:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.8404
+    section: primary
+    x_ohm_km: 0.38
+  COO0307:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.5286
+    section: primary
+    x_ohm_km: 0.38
+  COO0308:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.4192
+    section: primary
+    x_ohm_km: 0.38
+  COO0309:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.3324
+    section: primary
+    x_ohm_km: 0.38
+  COO0310:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.2636
+    section: primary
+    x_ohm_km: 0.38
+  COO0311:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 6.9726
+    section: primary
+    x_ohm_km: 0.38
+  COO0312:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 13.9451
+    section: primary
+    x_ohm_km: 0.38
+  COO0313:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.1134
+    section: secondary
+    x_ohm_km: 0.09
+  COO0314:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0851
+    section: secondary
+    x_ohm_km: 0.09
+  COO0315:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0567
+    section: secondary
+    x_ohm_km: 0.09
+  COO0316:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0486
+    section: secondary
+    x_ohm_km: 0.09
+  COO0331:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 1.3363
+    section: primary
+    x_ohm_km: 0.12
+  COO0332:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.8404
+    section: primary
+    x_ohm_km: 0.12
+  COO0333:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.5286
+    section: primary
+    x_ohm_km: 0.12
+  COO0334:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.4192
+    section: primary
+    x_ohm_km: 0.12
+  COO0335:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.3324
+    section: primary
+    x_ohm_km: 0.12
+  COO0336:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.2636
+    section: primary
+    x_ohm_km: 0.12
+  COO0337:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 6.9726
+    section: primary
+    x_ohm_km: 0.12
+  COO0338:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 13.9451
+    section: primary
+    x_ohm_km: 0.12
+  COO0339:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 11.1561
+    section: primary
+    x_ohm_km: 0.12
+  COO0340:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1169
+    section: primary
+    x_ohm_km: 0.12
+  COO0341:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 11.1561
+    section: primary
+    x_ohm_km: 0.12
+  COO0342:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0877
+    section: primary
+    x_ohm_km: 0.12
+  COO0343:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0702
+    section: primary
+    x_ohm_km: 0.12
+  COO0344:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 1.3363
+    section: primary
+    x_ohm_km: 0.12
+  COO0345:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.8404
+    section: primary
+    x_ohm_km: 0.12
+  COO0346:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.5286
+    section: primary
+    x_ohm_km: 0.12
+  COO0347:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.4192
+    section: primary
+    x_ohm_km: 0.12
+  COO0348:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.3324
+    section: primary
+    x_ohm_km: 0.12
+  COO0349:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.2636
+    section: primary
+    x_ohm_km: 0.12
+  COO0350:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 6.9726
+    section: primary
+    x_ohm_km: 0.12
+  COO0351:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 13.9451
+    section: primary
+    x_ohm_km: 0.12
+  COO0352:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 11.1561
+    section: primary
+    x_ohm_km: 0.12
+  COO0353:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1169
+    section: primary
+    x_ohm_km: 0.12
+  COO0354:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 11.1561
+    section: primary
+    x_ohm_km: 0.12
+  COO0355:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0877
+    section: primary
+    x_ohm_km: 0.12
+  COO0356:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0702
+    section: primary
+    x_ohm_km: 0.12
+  COO0357:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 1.3363
+    section: primary
+    x_ohm_km: 0.12
+  COO0358:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.8404
+    section: primary
+    x_ohm_km: 0.12
+  COO0359:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.5286
+    section: primary
+    x_ohm_km: 0.12
+  COO0360:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.4192
+    section: primary
+    x_ohm_km: 0.12
+  COO0361:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.3324
+    section: primary
+    x_ohm_km: 0.12
+  COO0362:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.2636
+    section: primary
+    x_ohm_km: 0.12
+  COO0363:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 6.9726
+    section: primary
+    x_ohm_km: 0.12
+  COO0364:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 13.9451
+    section: primary
+    x_ohm_km: 0.12
+  COO0365:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 11.1561
+    section: primary
+    x_ohm_km: 0.12
+  COO0366:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1169
+    section: primary
+    x_ohm_km: 0.12
+  COO0367:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 11.1561
+    section: primary
+    x_ohm_km: 0.12
+  COO0368:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0877
+    section: primary
+    x_ohm_km: 0.12
+  COO0369:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0702
+    section: primary
+    x_ohm_km: 0.12
+  COO0370:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 5.3723
+    section: primary
+    x_ohm_km: 0.38
+  COO0371:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 8.5423
+    section: secondary
+    x_ohm_km: 0.09
+  COO0372:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 5.3723
+    section: secondary
+    x_ohm_km: 0.09
+  COO0373:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 3.3787
+    section: secondary
+    x_ohm_km: 0.09
+  COO0374:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.2636
+    section: secondary
+    x_ohm_km: 0.09
+  COO0375:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.2636
+    section: secondary
+    x_ohm_km: 0.09
+  COO0376:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0744
+    section: primary
+    x_ohm_km: 0.38
+  COO0377:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0558
+    section: primary
+    x_ohm_km: 0.38
+  COO0378:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1169
+    section: primary
+    x_ohm_km: 0.38
+  COO0379:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.0713
+    section: secondary
+    x_ohm_km: 0.09
+  COO0380:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 0.034
+    section: primary
+    x_ohm_km: 0.38
+  COO0382:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 3.3787
+    section: secondary
+    x_ohm_km: 0.09
+  COO0383:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 2.1249
+    section: secondary
+    x_ohm_km: 0.09
+  COO0384:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 1.3363
+    section: secondary
+    x_ohm_km: 0.09
+  COO0385:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.8404
+    section: secondary
+    x_ohm_km: 0.09
+  COO0386:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.5286
+    section: secondary
+    x_ohm_km: 0.09
+  COO0387:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.4192
+    section: secondary
+    x_ohm_km: 0.09
+  COO0388:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.3324
+    section: secondary
+    x_ohm_km: 0.09
+  COO0389:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.2636
+    section: secondary
+    x_ohm_km: 0.09
+  COO0390:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.2231
+    section: secondary
+    x_ohm_km: 0.09
+  COO0391:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1859
+    section: secondary
+    x_ohm_km: 0.09
+  COO0392:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1594
+    section: secondary
+    x_ohm_km: 0.09
+  COO0393:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1395
+    section: secondary
+    x_ohm_km: 0.09
+  COO0394:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1169
+    section: secondary
+    x_ohm_km: 0.09
+  COO0395:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1116
+    section: secondary
+    x_ohm_km: 0.09
+  COO0396:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.093
+    section: secondary
+    x_ohm_km: 0.09
+  COO0397:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0797
+    section: secondary
+    x_ohm_km: 0.09
+  COO0398:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0744
+    section: secondary
+    x_ohm_km: 0.09
+  COO0399:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.0558
+    section: secondary
+    x_ohm_km: 0.09
+  COO0400:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.169
+    section: primary
+    x_ohm_km: 0.38
+  COO0401:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 5.2108
+    section: secondary
+    x_ohm_km: 0.09
+  COO0402:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 3.2771
+    section: secondary
+    x_ohm_km: 0.09
+  COO0403:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 2.061
+    section: secondary
+    x_ohm_km: 0.09
+  COO0404:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 2.061
+    section: secondary
+    x_ohm_km: 0.09
+  COO0405:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1594
+    section: secondary
+    x_ohm_km: 0.09
+  COO0410:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 5.3723
+    section: secondary
+    x_ohm_km: 0.09
+  COO0411:
+    ampacity_a: null
+    material: cu
+    r_ohm_km: 8.2854
+    section: secondary
+    x_ohm_km: 0.09
+  COO0412:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 5.3723
+    section: secondary
+    x_ohm_km: 0.09
+  COO0415:
+    ampacity_a: null
+    material: al
+    r_ohm_km: 0.1859
+    section: primary
+    x_ohm_km: 0.12

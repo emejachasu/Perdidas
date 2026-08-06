@@ -34,6 +34,27 @@ def load_cnel_mapping(path: str | Path | None = None) -> dict:
     return yaml.safe_load(Path(p).read_text(encoding="utf-8"))
 
 
+def write_conductor_catalog(catalogo_estructura: pd.DataFrame,
+                            out_path: str | Path | None = None) -> int:
+    """Deriva el catálogo de conductores del cliente y lo escribe en
+    ``config/conductors_cnel.yaml`` (Anexo D1, ver ``conductor_catalog.py``)."""
+    from .conductor_catalog import build_catalog_from_structure_table
+    catalog = build_catalog_from_structure_table(catalogo_estructura)
+    p = Path(out_path) if out_path else config_dir() / "conductors_cnel.yaml"
+    header = (
+        "# Catálogo de conductores derivado AUTOMÁTICAMENTE de CATALOGOESTRUCTURA\n"
+        "# (DESCRIPCIONLARGA) por `lossan ingest-cnel` — ver\n"
+        "# src/lossan/io/conductor_catalog.py. APROXIMADO (física por calibre/\n"
+        "# material, sin corrección por trenzado ni GMD real): calibrar contra\n"
+        "# el catálogo del fabricante cuando esté disponible (Anexo D1).\n"
+        "# No editar a mano — se regenera en cada `ingest-cnel`.\n"
+    )
+    with p.open("w", encoding="utf-8") as fh:
+        fh.write(header)
+        yaml.safe_dump({"conductors": catalog}, fh, allow_unicode=True, sort_keys=True)
+    return len(catalog)
+
+
 # --------------------------------------------------------------------------
 # Decodificación de dominios
 # --------------------------------------------------------------------------
@@ -224,6 +245,36 @@ def build_canonical(layers: dict[str, pd.DataFrame], mapping: dict,
                                bank_dom, n_units_by_site.get(sites["site_id"].iloc[i]))
             for i in range(len(sites))
         ]
+
+        # SUBTIPO de PuestoTransfDistribucion (verificado por el cliente) es una
+        # señal más confiable que CONFIGURACIONLADOBAJA: describe directamente
+        # si es integral trifásico o banco de 2/3 unidades. Se usa como fuente
+        # primaria cuando está disponible.
+        _kind_to_bank = {
+            "single": BankConfig.SINGLE.value,
+            "integral_3ph": BankConfig.INDEPENDENT.value,   # 1 unidad trifásica, no banco
+            "bank2": BankConfig.OPEN_DELTA.value,
+            "bank3": BankConfig.WYE_CLOSED.value,
+            "biphase": BankConfig.OPEN_WYE_OPEN_DELTA.value,
+        }
+        n_from_subtype = 0
+        if "subtype_raw" in sites.columns:
+            subtype_dom = lmap["sites"].get("subtype_domain", {})
+            new_cfg = []
+            for i in range(len(sites)):
+                v = sites["subtype_raw"].iloc[i]
+                info = subtype_dom.get(int(v)) if pd.notna(v) else None
+                if info is not None:
+                    new_cfg.append(_kind_to_bank.get(info["kind"], sites["bank_config"].iloc[i]))
+                    n_from_subtype += 1
+                else:
+                    new_cfg.append(sites["bank_config"].iloc[i])
+            sites["bank_config"] = new_cfg
+            sites = sites.drop(columns=["subtype_raw"])
+            if n_from_subtype:
+                logger.info(f"{n_from_subtype} puestos con bank_config resuelto por "
+                            f"SUBTIPO (señal más confiable que CONFIGURACIONLADOBAJA).")
+
         # Reconciliar contra el conteo REAL de unidades (§5.2): un puesto
         # declarado 'wye_closed'/'delta_closed' con != 3 unidades (o
         # 'open_delta'/... con != 2, o 'single' con != 1) es una
@@ -370,8 +421,17 @@ def build_canonical(layers: dict[str, pd.DataFrame], mapping: dict,
             if "phase_raw" in df:
                 df["phase"] = df["phase_raw"].map(lambda v: decode_phase(v, phase_dom))
                 df = df.drop(columns=["phase_raw"])
-            if name == "streetlights" and "technology" not in df.columns:
-                df["technology"] = lmap["streetlights"].get("technology_default", "led")
+            if name == "streetlights":
+                sl_spec = lmap["streetlights"]
+                default_tech = sl_spec.get("technology_default", "led")
+                if "technology_raw" in df.columns:
+                    tech_dom = sl_spec.get("technology_domain", {})
+                    df["technology"] = df["technology_raw"].map(
+                        lambda v: tech_dom.get(int(v), default_tech)
+                        if pd.notna(v) else default_tech)
+                    df = df.drop(columns=["technology_raw"])
+                elif "technology" not in df.columns:
+                    df["technology"] = default_tech
             out[name] = df
 
     return out
@@ -434,4 +494,13 @@ def ingest_cnel_fgdb(path: str, root: str, mapping: dict | None = None,
             n += len(part)
         counts[entity] = n
     counts["_hierarchy"] = site_unit_summary(canonical).to_dict("records")
+
+    # --- Catálogo de conductores derivado de CATALOGOESTRUCTURA (Anexo D1) ---
+    try:
+        cat_estructura = read_layer(path, "CATALOGOESTRUCTURA")
+        n_cat = write_conductor_catalog(cat_estructura)
+        counts["_conductor_catalog"] = n_cat
+    except Exception as e:
+        logger.warning(f"No se pudo derivar el catálogo de conductores: {e}")
+
     return counts

@@ -35,6 +35,15 @@ def _load_file(name: str) -> dict[str, Any]:
         return yaml.safe_load(fh) or {}
 
 
+@functools.lru_cache(maxsize=None)
+def _load_file_optional(name: str) -> dict[str, Any]:
+    path = config_dir() / name
+    if not path.exists():
+        return {}
+    with path.open("r", encoding="utf-8") as fh:
+        return yaml.safe_load(fh) or {}
+
+
 class Config:
     """Acceso unificado y cacheado a la configuración del proyecto."""
 
@@ -74,7 +83,14 @@ class Config:
 
     @property
     def conductors(self) -> dict[str, Any]:
-        return self._conductors["conductors"]
+        # Catálogo base (config/conductors.yaml) + catálogo derivado del
+        # cliente (config/conductors_cnel.yaml, generado por `ingest-cnel`
+        # desde CATALOGOESTRUCTURA, Anexo D1) si existe. El del cliente pisa
+        # al genérico ante colisión de código.
+        merged = dict(self._conductors["conductors"])
+        client = _load_file_optional("conductors_cnel.yaml").get("conductors", {})
+        merged.update(client)
+        return merged
 
     @property
     def conductor_ordering(self) -> dict[str, list[str]]:
